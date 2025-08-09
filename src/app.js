@@ -534,19 +534,40 @@ function wireStagePanZoom() {
   let isPanning = false;
   let startX = 0, startY = 0, origX = 0, origY = 0;
 
+  // Wheel/trackpad: zoom around cursor when any modifier is held OR always (intuitive),
+  // otherwise pan using scroll deltas
   container.addEventListener('wheel', (e) => {
-    if (!e.ctrlKey) return; // pinch to zoom on trackpad
     e.preventDefault();
-    const scaleDelta = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = clamp(state.zoom.scale * scaleDelta, 0.2, 2.5);
     const rect = stage.getBoundingClientRect();
     const offsetX = (e.clientX - rect.left);
     const offsetY = (e.clientY - rect.top);
-    const wx = (offsetX - state.zoom.x) / state.zoom.scale;
-    const wy = (offsetY - state.zoom.y) / state.zoom.scale;
-    state.zoom.scale = newScale;
-    state.zoom.x = offsetX - wx * state.zoom.scale;
-    state.zoom.y = offsetY - wy * state.zoom.scale;
+
+    const isZoomGesture = e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || true; // always zoom by wheel for intuitiveness
+
+    if (isZoomGesture) {
+      // Normalize delta (pixels vs lines)
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const zoomIntensity = 0.0015; // lower is slower
+      const scaleFactor = Math.exp(-delta * zoomIntensity);
+      const newScale = clamp(state.zoom.scale * scaleFactor, 0.2, 3.0);
+
+      // World coordinates under cursor before scaling
+      const worldX = (offsetX - state.zoom.x) / state.zoom.scale;
+      const worldY = (offsetY - state.zoom.y) / state.zoom.scale;
+
+      state.zoom.scale = newScale;
+      // Keep cursor anchored to same world point
+      state.zoom.x = offsetX - worldX * state.zoom.scale;
+      state.zoom.y = offsetY - worldY * state.zoom.scale;
+      applyStageTransform();
+      return;
+    }
+
+    // Pan when not zooming (two-finger scroll or mouse wheel)
+    const dx = e.deltaMode === 1 ? e.deltaX * 16 : e.deltaX;
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    state.zoom.x -= dx; // natural content movement
+    state.zoom.y -= dy;
     applyStageTransform();
   }, { passive: false });
 
