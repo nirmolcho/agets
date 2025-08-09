@@ -330,7 +330,7 @@ function createAgentCard(node, design) {
   header.classList.add('tab-header');
   header.onclick = (e) => {
     e.stopPropagation();
-    toggleAgentTab(node.id);
+    openDetailPanel(node.id);
   };
 
   const deptTag = document.createElement('span');
@@ -403,7 +403,11 @@ function createAgentCard(node, design) {
   }
 
   enableDrag(el);
-  el.addEventListener('dblclick', () => openDetailPanel(node.id));
+  // Open side panel on single click anywhere on the card that isn't a control button
+  el.addEventListener('click', (e) => {
+    if ((e.target && e.target.closest && e.target.closest('.control-btn'))) return;
+    openDetailPanel(node.id);
+  });
   return el;
 }
 
@@ -703,7 +707,7 @@ function onEscapeClosePanel(e) {
 function renderDetailPanel(agentId) {
   const node = state.nodes.get(agentId);
   if (!node) return;
-  const tasks = sortTasks(state.tasksByAgent.get(agentId) || [], 'priority');
+  const tasks = sortTasks(state.tasksByAgent.get(agentId) || [], state.taskSort || 'priority');
   const nextTask = tasks[0];
   const panel = document.getElementById('detail-panel');
   panel.innerHTML = '';
@@ -737,6 +741,19 @@ function renderDetailPanel(agentId) {
     };
     nextTaskBlock.append(empty, quick);
   }
+
+  const controlsBar = document.createElement('div');
+  controlsBar.style.display = 'flex';
+  controlsBar.style.alignItems = 'center';
+  controlsBar.style.justifyContent = 'space-between';
+  controlsBar.style.gap = '8px';
+  const sortWrap = document.createElement('div');
+  sortWrap.className = 'subtle';
+  sortWrap.innerHTML = `Sort by: <select id="task-sort">
+      <option value="priority" ${((state.taskSort||'priority')==='priority')?'selected':''}>Priority</option>
+      <option value="due" ${((state.taskSort||'priority')==='due')?'selected':''}>Due Date</option>
+    </select>`;
+  controlsBar.append(sortWrap);
 
   const timeSummary = document.createElement('div');
   timeSummary.className = 'time-summary';
@@ -777,9 +794,14 @@ function renderDetailPanel(agentId) {
     meta.className = 'meta';
     const pieces = [t.priority];
     if (t.dueDate) pieces.push('Due ' + t.dueDate);
-    const est = formatEstimate(t);
-    if (est) pieces.push(est.replace(/^,\s*/, ''));
     meta.textContent = pieces.join(' • ');
+    const estText = formatEstimate(t).replace(/^,\s*/, '');
+    if (estText) {
+      const timePill = document.createElement('span');
+      timePill.className = 'time-pill';
+      timePill.textContent = estText;
+      meta.appendChild(timePill);
+    }
 
     li.append(top, meta);
     const actions = document.createElement('div');
@@ -841,7 +863,7 @@ function renderDetailPanel(agentId) {
       <button class="btn btn-secondary" id="btn-close-panel">Close</button>
     </div>
   `;
-  panel.append(header, description, nextTaskBlock, timeSummary, list, form);
+  panel.append(header, description, controlsBar, timeSummary, list, form);
 
   panel.querySelector('#btn-add-task').onclick = () => {
     const title = panel.querySelector('#task-title').value.trim();
@@ -856,6 +878,15 @@ function renderDetailPanel(agentId) {
     renderDetailPanel(agentId);
   };
   panel.querySelector('#btn-close-panel').onclick = closeDetailPanel;
+
+  // Wire sort control
+  const sortSelect = panel.querySelector('#task-sort');
+  if (sortSelect) {
+    sortSelect.onchange = () => {
+      state.taskSort = sortSelect.value;
+      renderDetailPanel(agentId);
+    };
+  }
 }
 
 function getAgentGenericPrompt(node) {
@@ -916,6 +947,20 @@ function sortTasks(tasks, criterion) {
       const sa = (a.status || 'pending') === 'done' ? 1 : 0;
       const sb = (b.status || 'pending') === 'done' ? 1 : 0;
       if (sa !== sb) return sa - sb; // pending/in-progress before done
+      return (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
+  } else if (criterion === 'due') {
+    cloned.sort((a, b) => {
+      const ad = a.dueDate ? Date.parse(a.dueDate) : Infinity;
+      const bd = b.dueDate ? Date.parse(b.dueDate) : Infinity;
+      if (ad !== bd) return ad - bd;
+      const sa = (a.status || 'pending') === 'done' ? 1 : 0;
+      const sb = (b.status || 'pending') === 'done' ? 1 : 0;
+      if (sa !== sb) return sa - sb;
+      const order = { high: 0, medium: 1, low: 2 };
+      const pa = order[a.priority] ?? 3;
+      const pb = order[b.priority] ?? 3;
+      if (pa !== pb) return pa - pb;
       return (a.createdAt || '').localeCompare(b.createdAt || '');
     });
   }
@@ -1218,8 +1263,8 @@ function renderDepartmentOverlayContent(container, deptKey) {
     btnOpen.className = 'btn btn-primary';
     btnOpen.textContent = 'Show Details';
     btnOpen.onclick = () => {
-      state.overlaySelectedAgentId = a.id;
-      renderDepartmentOverlayContent(container, deptKey);
+      closeDepartmentOverlay();
+      openDetailPanel(a.id);
     };
     const btnSelect = document.createElement('button');
     btnSelect.className = 'btn btn-secondary';
@@ -1230,8 +1275,8 @@ function renderDepartmentOverlayContent(container, deptKey) {
     };
     actions.append(btnOpen, btnSelect);
     mini.append(miniHeader, meta, actions);
-    mini.onclick = () => { state.overlaySelectedAgentId = a.id; renderDepartmentOverlayContent(container, deptKey); };
-    mini.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); state.overlaySelectedAgentId = a.id; renderDepartmentOverlayContent(container, deptKey); } };
+    mini.onclick = () => { closeDepartmentOverlay(); openDetailPanel(a.id); };
+    mini.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeDepartmentOverlay(); openDetailPanel(a.id); } };
     grid.appendChild(mini);
   }
 
