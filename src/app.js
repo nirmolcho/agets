@@ -711,6 +711,10 @@ function renderDetailPanel(agentId) {
   const header = document.createElement('div');
   header.innerHTML = `<h3>${node.name}</h3><div class="subtle">${node.role} • ${formatDepartment(node.department)}</div>`;
 
+  // Basic actions: keyboard help
+  header.setAttribute('role', 'heading');
+  header.setAttribute('aria-level', '2');
+
   const description = document.createElement('div');
   description.className = 'subtle';
   description.textContent = getAgentGenericPrompt(node);
@@ -863,6 +867,7 @@ function addTask(agentId, partial) {
     description: partial.description,
     priority: partial.priority || 'medium',
     status: partial.status || 'pending',
+    estimateMinutes: typeof partial.estimateMinutes === 'number' ? partial.estimateMinutes : undefined,
     dueDate: partial.dueDate,
     createdAt: new Date().toISOString(),
   });
@@ -892,6 +897,37 @@ function moveTask(agentId, taskId, direction) {
   const [item] = tasks.splice(idx, 1);
   tasks.splice(newIdx, 0, item);
   state.tasksByAgent.set(agentId, tasks);
+}
+
+function sortTasks(tasks, criterion) {
+  const cloned = [...tasks];
+  if (criterion === 'priority') {
+    const order = { high: 0, medium: 1, low: 2 };
+    cloned.sort((a, b) => {
+      const pa = order[a.priority] ?? 3;
+      const pb = order[b.priority] ?? 3;
+      if (pa !== pb) return pa - pb;
+      const sa = (a.status || 'pending') === 'done' ? 1 : 0;
+      const sb = (b.status || 'pending') === 'done' ? 1 : 0;
+      if (sa !== sb) return sa - sb; // pending/in-progress before done
+      return (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
+  }
+  return cloned;
+}
+
+function formatEstimate(t) {
+  const m = t?.estimateMinutes;
+  if (typeof m !== 'number' || Number.isNaN(m)) return '';
+  return `, ${formatMinutes(m)}`;
+}
+
+function formatMinutes(total) {
+  const m = Math.max(0, Number(total) || 0);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem ? `${h}h ${rem}m` : `${h}h`;
 }
 
 // -------------------- Tooltip --------------------
@@ -1224,6 +1260,12 @@ function renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer) 
 
   const list = document.createElement('ul');
   list.className = 'task-list';
+  if (tasks.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No active tasks';
+    list.appendChild(empty);
+  }
   for (const t of tasks) {
     const li = document.createElement('li');
     li.className = 'task-item';
