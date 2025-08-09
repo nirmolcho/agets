@@ -130,13 +130,14 @@ body {
   position: fixed;
   top: 56px;
   right: 0;
-  width: 420px;
+  width: clamp(var(--overlay-width-min, 300px), var(--overlay-width-pref, 45vw), var(--overlay-width-max, 900px));
   max-width: 92vw;
   height: calc(100vh - 56px);
-  background: var(--card-bg);
-  border-left: 1px solid var(--card-border);
-  box-shadow: -8px 0 24px rgba(0,0,0,0.4);
-  padding: 16px;
+  background: var(--sidepanel-bg, var(--card-bg));
+  color: var(--sidepanel-color, inherit);
+  border-left: var(--sidepanel-border-left, 1px solid var(--card-border));
+  box-shadow: var(--sidepanel-shadow, -8px 0 24px rgba(0,0,0,0.4));
+  padding: var(--sidepanel-padding, 16px);
   overflow: auto;
   z-index: 45;
   transform: translateX(100%);
@@ -155,6 +156,14 @@ body {
 .task-form { display: grid; gap: 8px; margin-top: 16px; }
 .task-form input, .task-form select, .task-form textarea { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px; }
 .task-form textarea { min-height: 80px; }
+
+/* Side panel scrollbar for detail-panel (WebKit) */
+.detail-panel::-webkit-scrollbar { width: var(--sidepanel-scrollbar-width, 8px); }
+.detail-panel::-webkit-scrollbar-track { background: var(--sidepanel-scrollbar-bg, #1A1A1A); }
+.detail-panel::-webkit-scrollbar-thumb { background: var(--sidepanel-scrollbar-thumb-bg, #333333); border-radius: var(--sidepanel-scrollbar-thumb-radius, 4px); }
+
+/* Firefox */
+.detail-panel { scrollbar-width: thin; scrollbar-color: var(--sidepanel-scrollbar-thumb-bg, #333333) var(--sidepanel-scrollbar-bg, #1A1A1A); }
 
 /* Task status pills */
 .task-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
