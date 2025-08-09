@@ -419,21 +419,36 @@ function setStatus(id, status) {
 }
 
 function enableDrag(el) {
-  let startX = 0, startY = 0, origX = 0, origY = 0;
+  let startX = 0, startY = 0, origX = 0, origY = 0, isDragging = false;
   const onDown = (e) => {
-    e.preventDefault();
+    // Do not initiate drag from interactive controls; allow clicks to work
+    if (e.target && e.target.closest && e.target.closest('.control-btn, .btn, .task-form, .detail-panel, .toolbar')) {
+      return;
+    }
     startX = e.clientX;
     startY = e.clientY;
     const id = el.dataset.id;
     const node = state.nodes.get(id);
     origX = node.x;
     origY = node.y;
+    isDragging = false;
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp, { once: true });
   };
   const onMove = (e) => {
-    const dx = (e.clientX - startX) / state.zoom.scale;
-    const dy = (e.clientY - startY) / state.zoom.scale;
+    const totalDx = e.clientX - startX;
+    const totalDy = e.clientY - startY;
+    if (!isDragging) {
+      const threshold = 3;
+      if (Math.abs(totalDx) < threshold && Math.abs(totalDy) < threshold) {
+        return; // not a drag yet; let click happen
+      }
+      isDragging = true;
+      // Only prevent default once dragging actually starts
+      e.preventDefault();
+    }
+    const dx = totalDx / state.zoom.scale;
+    const dy = totalDy / state.zoom.scale;
     const id = el.dataset.id;
     const node = state.nodes.get(id);
     node.x = origX + dx;
@@ -445,10 +460,12 @@ function enableDrag(el) {
   };
   const onUp = () => {
     window.removeEventListener('pointermove', onMove);
-    // Persist per-session manual position
-    const id = el.dataset.id;
-    if (id) saveAgentPosition(id);
-    render();
+    if (isDragging) {
+      // Persist per-session manual position
+      const id = el.dataset.id;
+      if (id) saveAgentPosition(id);
+      render();
+    }
   };
   el.addEventListener('pointerdown', onDown);
 }
@@ -1589,21 +1606,35 @@ function applySavedPositions() {
 }
 
 function enableDeptDrag(el) {
-  let startX = 0, startY = 0, origX = 0, origY = 0;
+  let startX = 0, startY = 0, origX = 0, origY = 0, isDragging = false;
   const onDown = (e) => {
-    e.preventDefault();
+    // Allow clicks on header/controls to work; don't immediately prevent default
+    if (e.target && e.target.closest && e.target.closest('.control-btn, .btn, .dept-header')) {
+      return;
+    }
     startX = e.clientX;
     startY = e.clientY;
     const styleLeft = parseFloat(el.style.left || '0');
     const styleTop = parseFloat(el.style.top || '0');
     origX = styleLeft;
     origY = styleTop;
+    isDragging = false;
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp, { once: true });
   };
   const onMove = (e) => {
-    const dx = (e.clientX - startX) / state.zoom.scale;
-    const dy = (e.clientY - startY) / state.zoom.scale;
+    const totalDx = e.clientX - startX;
+    const totalDy = e.clientY - startY;
+    if (!isDragging) {
+      const threshold = 3;
+      if (Math.abs(totalDx) < threshold && Math.abs(totalDy) < threshold) {
+        return;
+      }
+      isDragging = true;
+      e.preventDefault();
+    }
+    const dx = totalDx / state.zoom.scale;
+    const dy = totalDy / state.zoom.scale;
     const x = origX + dx;
     const y = origY + dy;
     el.style.left = `${x}px`;
@@ -1611,12 +1642,14 @@ function enableDeptDrag(el) {
   };
   const onUp = () => {
     window.removeEventListener('pointermove', onMove);
-    const deptKey = el.dataset.dept;
-    const x = parseFloat(el.style.left || '0');
-    const y = parseFloat(el.style.top || '0');
-    if (deptKey) saveDeptPosition(deptKey, x, y);
-    // Redraw to ensure canvas bounds adjust if needed
-    render();
+    if (isDragging) {
+      const deptKey = el.dataset.dept;
+      const x = parseFloat(el.style.left || '0');
+      const y = parseFloat(el.style.top || '0');
+      if (deptKey) saveDeptPosition(deptKey, x, y);
+      // Redraw to ensure canvas bounds adjust if needed
+      render();
+    }
   };
   el.addEventListener('pointerdown', onDown);
 }
