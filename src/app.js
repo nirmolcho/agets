@@ -1148,6 +1148,11 @@ function createDepartmentCard(dept, x, y, design) {
     el.append(header);
   }
   enableDeptDrag(el);
+  // Open department overlay on single click anywhere on the card that isn't a control button
+  el.addEventListener('click', (e) => {
+    if ((e.target && e.target.closest && e.target.closest('.control-btn'))) return;
+    openDepartmentOverlay(dept.key);
+  });
   return el;
 }
 
