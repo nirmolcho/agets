@@ -1,0 +1,123 @@
+{
+  "elementStyling": {
+    "container": {
+      "background": "#0F0F0F",
+      "minHeight": "100vh",
+      "fontFamily": "'Inter', sans-serif"
+    },
+    "cards": {
+      "background": "#1A1A1A",
+      "border": "1px solid #333333",
+      "borderRadius": "12px",
+      "shadow": "0 8px 32px rgba(0,0,0,0.4)",
+      "padding": "20px",
+      "minWidth": "280px",
+      "maxWidth": "320px",
+      "color": "#FFFFFF",
+      "hover": {
+        "transform": "translateY(-4px)",
+        "shadow": "0 12px 40px rgba(0,0,0,0.6)",
+        "border": "1px solid #444444"
+      },
+      "departmentTags": {
+        "engineering": {
+          "background": "linear-gradient(135deg, #4169E1 0%, #6495ED 100%)",
+          "color": "#FFFFFF",
+          "borderRadius": "6px",
+          "padding": "6px 12px",
+          "fontSize": "12px",
+          "fontWeight": "600"
+        },
+        "marketing": {
+          "background": "linear-gradient(135deg, #00BFFF 0%, #87CEEB 100%)",
+          "color": "#FFFFFF"
+        },
+        "design": {
+          "background": "linear-gradient(135deg, #FF69B4 0%, #FFB6C1 100%)",
+          "color": "#FFFFFF"
+        },
+        "product": {
+          "background": "linear-gradient(135deg, #32CD32 0%, #90EE90 100%)",
+          "color": "#FFFFFF"
+        },
+        "operations": {
+          "background": "linear-gradient(135deg, #FF4500 0%, #FFA500 100%)",
+          "color": "#FFFFFF"
+        }
+      },
+      "statusIndicators": {
+        "active": {
+          "background": "#00FF00",
+          "boxShadow": "0 0 10px rgba(0,255,0,0.5)",
+          "borderRadius": "50%",
+          "size": "12px"
+        },
+        "idle": {
+          "background": "#FFD700",
+          "boxShadow": "0 0 10px rgba(255,215,0,0.5)"
+        },
+        "error": {
+          "background": "#FF4500",
+          "boxShadow": "0 0 10px rgba(255,69,0,0.5)"
+        }
+      }
+    },
+    "connections": {
+      "lines": {
+        "stroke": "#555555",
+        "strokeWidth": "3px",
+        "strokeDasharray": "none",
+        "opacity": "0.7"
+      },
+      "arrows": {
+        "fill": "#777777",
+        "size": "8px"
+      }
+    },
+    "buttons": {
+      "primary": {
+        "background": "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+        "color": "#FFFFFF",
+        "border": "none",
+        "borderRadius": "8px",
+        "padding": "10px 20px",
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "hover": {
+          "background": "linear-gradient(135deg, #5B5FE8 0%, #8048F0 100%)",
+          "transform": "scale(1.05)"
+        }
+      },
+      "secondary": {
+        "background": "transparent",
+        "color": "#CCCCCC",
+        "border": "1px solid #444444",
+        "hover": {
+          "background": "#2A2A2A",
+          "color": "#FFFFFF"
+        }
+      }
+    },
+    "icons": {
+      "size": "24px",
+      "color": "#CCCCCC",
+      "hover": {
+        "color": "#FFFFFF"
+      }
+    }
+  },
+  "rules": {
+    "DO_NOT_APPLY_TO": [
+      "icons.gradients",
+      "buttons.gradients",
+      "backgrounds.brightColors"
+    ],
+    "NOTES": [
+      "Use dark theme for professional appearance",
+      "Apply gradients only to department tags",
+      "Implement hover effects on interactive elements",
+      "Use consistent spacing and typography",
+      "Include visual feedback for all interactions"
+    ]
+  }
+}

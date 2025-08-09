@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Orchestration Studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app-root">
+      <div id="toolbar" class="toolbar">
+        <div class="toolbar-left">
+          <button id="btn-add-agent" class="btn btn-primary">Add Agent</button>
+          <button id="btn-export" class="btn btn-secondary">Export</button>
+          <input id="file-import" type="file" accept="application/json" hidden />
+          <button id="btn-import" class="btn btn-secondary">Import</button>
+        </div>
+        <div class="toolbar-right">
+          <span class="legend">
+            <span class="status-dot status-active"></span> Active
+          </span>
+          <span class="legend">
+            <span class="status-dot status-idle"></span> Idle
+          </span>
+          <span class="legend">
+            <span class="status-dot status-error"></span> Error
+          </span>
+        </div>
+      </div>
+
+      <div id="canvas-container" class="canvas-container">
+        <svg id="connections" class="connections" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="cards-layer" class="cards-layer"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+  </html>
+
+
