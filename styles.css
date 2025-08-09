@@ -67,6 +67,7 @@ body {
 .stage {
   position: relative;
   transform-origin: 0 0;
+  will-change: transform; /* smoother zoom/pan */
 }
 .connections {
   position: absolute;
@@ -114,7 +115,7 @@ body {
 .control-btn { border: 1px solid #444; background: transparent; color: #ccc; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
 .control-btn:hover { background: #2a2a2a; color: #fff; }
 
-.connection-path { stroke: var(--line-stroke); stroke-width: 3; fill: none; opacity: 0.7; pointer-events: auto; }
+.connection-path { stroke: var(--line-stroke); stroke-width: 3; fill: none; opacity: 0.7; pointer-events: auto; vector-effect: non-scaling-stroke; }
 
 /* Testing connection styles */
 .connection-path.testing {
