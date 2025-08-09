@@ -62,7 +62,7 @@ body {
 .canvas-container {
   position: relative;
   height: calc(100vh - 56px);
-  overflow: auto;
+  overflow: hidden; /* prevent default scrollbars; zoom/pan handles navigation */
 }
 .stage {
   position: relative;
@@ -71,15 +71,13 @@ body {
 .connections {
   position: absolute;
   inset: 0;
-  width: 2000px; /* expanded for panning */
-  height: 1400px;
+  /* width/height are set dynamically to content size */
   pointer-events: none;
 }
 .cards-layer {
   position: absolute;
   inset: 0;
-  width: 2000px;
-  height: 1400px;
+  /* width/height are set dynamically to content size */
 }
 
 .zoom-controls {
@@ -92,8 +90,7 @@ body {
 
 .agent-card {
   position: absolute;
-  width: 300px;
-  min-height: 160px;
+  /* actual width/height applied inline for responsiveness */
   background: var(--card-bg);
   color: #fff;
   border: 1px solid var(--card-border);

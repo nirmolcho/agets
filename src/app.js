@@ -1,9 +1,10 @@
 import { loadTheme, getTheme, styleDepartmentTag, styleConnectionsPath } from './theme.js';
 
-const CARD_WIDTH = 300;
-const CARD_HEIGHT = 160;
-const GAP_X = 60;
-const GAP_Y = 140;
+// Responsive layout parameters (tunable at runtime)
+let CARD_WIDTH = 300;
+let CARD_HEIGHT = 160;
+let GAP_X = 60;
+let GAP_Y = 140;
 
 const STATUS_VALUES = ['active', 'idle', 'error'];
 
@@ -32,12 +33,15 @@ async function init() {
   const org = await orgRes.json();
 
   buildGraphFromOrganization(org);
+  computeResponsiveLayoutParams();
   autoLayout();
   render();
+  zoomToFit();
 
   wireToolbar();
   wireZoomControls();
   wireStagePanZoom();
+  wireResizeHandlers();
   startStatusTicker();
 }
 
@@ -266,6 +270,8 @@ function createAgentCard(node, design) {
   el.className = 'agent-card';
   el.style.left = `${node.x}px`;
   el.style.top = `${node.y}px`;
+  el.style.width = `${CARD_WIDTH}px`;
+  el.style.minHeight = `${CARD_HEIGHT}px`;
   el.dataset.id = node.id;
 
   const header = document.createElement('div');
@@ -434,8 +440,8 @@ function wireToolbar() {
   btnImport.onclick = () => fileImport.click();
   fileImport.onchange = importConfiguration;
   btnAdd.onclick = addAgentFlow;
-  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; render(); zoomToFit(); };
-  if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; autoLayout(); render(); zoomToFit(); };
+  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); render(); zoomToFit(); };
+  if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); render(); zoomToFit(); };
 }
 
 function exportConfiguration() {
@@ -519,7 +525,7 @@ function wireZoomControls() {
   document.getElementById('btn-full-view').onclick = zoomToFit;
   document.getElementById('btn-focus-view').onclick = zoomToFocus;
   const btnReorg = document.getElementById('btn-reorganize');
-  if (btnReorg) btnReorg.onclick = () => { autoLayout(); render(); zoomToFit(); };
+  if (btnReorg) btnReorg.onclick = () => { computeResponsiveLayoutParams(); autoLayout(); render(); zoomToFit(); };
 }
 
 function wireStagePanZoom() {
@@ -745,7 +751,9 @@ function renderDepartmentsView(cardsLayer, svg, design) {
 
   const deptCards = [];
   const keys = [...departments.keys()].sort();
-  const cols = Math.max(1, Math.floor(1600 / (CARD_WIDTH + GAP_X)));
+  const container = document.getElementById('canvas-container');
+  const available = Math.max(320, container.clientWidth - 120);
+  const cols = Math.max(1, Math.floor(available / (CARD_WIDTH + GAP_X)));
   const rowGap = GAP_Y;
   keys.forEach((key, idx) => {
     const d = departments.get(key);
@@ -765,6 +773,8 @@ function createDepartmentCard(dept, x, y, design) {
   el.className = 'agent-card';
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
+  el.style.width = `${CARD_WIDTH}px`;
+  el.style.minHeight = `${CARD_HEIGHT}px`;
   el.dataset.dept = dept.key;
 
   const header = document.createElement('div');
@@ -899,6 +909,64 @@ function renderDepartmentOrgView() {
     path.addEventListener('pointerleave', hideTooltip);
     svg.appendChild(path);
   }
+}
+
+// -------------------- Responsive Layout --------------------
+function wireResizeHandlers() {
+  let rafId = 0;
+  const schedule = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      computeResponsiveLayoutParams();
+      autoLayout();
+      render();
+      zoomToFit();
+    });
+  };
+  window.addEventListener('resize', schedule);
+  const container = document.getElementById('canvas-container');
+  if (window.ResizeObserver && container) {
+    const ro = new ResizeObserver(schedule);
+    ro.observe(container);
+  }
+}
+
+function computeResponsiveLayoutParams() {
+  const container = document.getElementById('canvas-container');
+  if (!container) return;
+  const width = Math.max(320, container.clientWidth);
+  const height = Math.max(320, container.clientHeight);
+
+  // Estimate breadth and depth
+  const nodes = [...state.nodes.values()];
+  const levels = new Map();
+  for (const n of nodes) {
+    const arr = levels.get(n.level) || [];
+    arr.push(n);
+    levels.set(n.level, arr);
+  }
+  const maxBreadth = Math.max(1, ...(Array.from(levels.values()).map(arr => arr.length)));
+  const depth = Math.max(1, ...(Array.from(levels.keys())) ) + 1; // levels start at 0
+
+  // Base sizes
+  const baseCardW = 300;
+  const baseCardH = 160;
+  const baseGapX = 60;
+  const baseGapY = 140;
+
+  // Approx required size using base values
+  const approxWidth = maxBreadth * baseCardW + (maxBreadth - 1) * baseGapX + 240;
+  const approxHeight = depth * baseCardH + (depth - 1) * baseGapY + 240;
+
+  const fitScaleX = width / approxWidth;
+  const fitScaleY = height / approxHeight;
+  // Mildly adapt intrinsic sizes; also stage zoom will handle remaining scaling
+  const s = clamp(Math.min(fitScaleX, fitScaleY), 0.7, 1.15);
+
+  CARD_WIDTH = clamp(Math.round(baseCardW * s), 180, 340);
+  CARD_HEIGHT = clamp(Math.round(baseCardH * s), 120, 220);
+  GAP_X = clamp(Math.round(baseGapX * s), 32, 100);
+  GAP_Y = clamp(Math.round(baseGapY * s), 80, 200);
 }
 
 init();
