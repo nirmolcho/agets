@@ -22,6 +22,8 @@ const state = {
   activeDepartment: null, // department key when viewing a specific department
   savedPositions: new Map(), // id -> { x, y }
   deptPositions: new Map(), // deptKey -> { x, y }
+  expandedAgentId: null, // only one expanded agent card at a time
+  overlayDeptKey: null, // department overlay open key
 };
 
 /**
@@ -315,6 +317,11 @@ function createAgentCard(node, design) {
 
   header.appendChild(titleWrap);
   header.appendChild(statusDot);
+  header.classList.add('tab-header');
+  header.onclick = (e) => {
+    e.stopPropagation();
+    toggleAgentTab(node.id);
+  };
 
   const deptTag = document.createElement('span');
   deptTag.className = 'dept-tag';
@@ -352,7 +359,14 @@ function createAgentCard(node, design) {
     controls.appendChild(btnRemoveAgent);
   }
 
-  el.append(header, deptTag, metrics, controls);
+  // Only show metrics/controls when expanded as a tab
+  if (state.expandedAgentId === node.id) {
+    el.classList.remove('tab-collapsed');
+    el.append(header, deptTag, metrics, controls);
+  } else {
+    el.classList.add('tab-collapsed');
+    el.append(header, deptTag);
+  }
 
   if (node.level === 1) {
     const managerControls = document.createElement('div');
@@ -379,7 +393,7 @@ function createAgentCard(node, design) {
   }
 
   enableDrag(el);
-  el.addEventListener('click', () => openDetailPanel(node.id));
+  el.addEventListener('dblclick', () => openDetailPanel(node.id));
   return el;
 }
 
@@ -669,9 +683,23 @@ function renderDetailPanel(agentId) {
   header.innerHTML = `<h3>${node.name}</h3><div class="subtle">${node.role} • ${formatDepartment(node.department)}</div>`;
 
   const nextTaskBlock = document.createElement('div');
-  nextTaskBlock.innerHTML = nextTask
-    ? `<div><strong>Next Task:</strong> ${nextTask.title} <span class="subtle">(priority: ${nextTask.priority}${nextTask.dueDate ? ", due "+nextTask.dueDate : ''})</span></div>`
-    : `<div class="empty">No active tasks</div>`;
+  if (nextTask) {
+    nextTaskBlock.innerHTML = `<div><strong>Next Task:</strong> ${nextTask.title} <span class="subtle">(priority: ${nextTask.priority}${nextTask.dueDate ? ", due "+nextTask.dueDate : ''})</span></div>`;
+  } else {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No active tasks';
+    const quick = document.createElement('button');
+    quick.className = 'btn btn-primary';
+    quick.textContent = 'Quick Add Task';
+    quick.onclick = () => {
+      const title = prompt('Task title?');
+      if (!title) return;
+      addTask(agentId, { title, description: '', priority: 'medium' });
+      renderDetailPanel(agentId);
+    };
+    nextTaskBlock.append(empty, quick);
+  }
 
   const list = document.createElement('ul');
   list.className = 'task-list';
@@ -681,11 +709,30 @@ function renderDetailPanel(agentId) {
     li.innerHTML = `<div><strong>${t.title}</strong></div><div class="meta">${t.priority}${t.dueDate ? ' • Due '+t.dueDate : ''}</div>`;
     const actions = document.createElement('div');
     actions.className = 'task-actions';
+    const up = document.createElement('span');
+    up.className = 'link';
+    up.textContent = 'Up';
+    up.onclick = () => { moveTask(agentId, t.id, -1); renderDetailPanel(agentId); };
+    const down = document.createElement('span');
+    down.className = 'link';
+    down.textContent = 'Down';
+    down.onclick = () => { moveTask(agentId, t.id, 1); renderDetailPanel(agentId); };
+    const edit = document.createElement('span');
+    edit.className = 'link';
+    edit.textContent = 'Edit';
+    edit.onclick = () => {
+      const title = prompt('Title', t.title) ?? t.title;
+      const description = prompt('Description', t.description || '') ?? t.description;
+      const priority = prompt('Priority (low|medium|high)', t.priority) ?? t.priority;
+      const dueDate = prompt('Due date (YYYY-MM-DD, blank to clear)', t.dueDate || '') || undefined;
+      updateTask(agentId, t.id, { title, description, priority, dueDate });
+      renderDetailPanel(agentId);
+    };
     const remove = document.createElement('span');
     remove.className = 'link';
     remove.textContent = 'Remove';
     remove.onclick = () => { removeTask(agentId, t.id); renderDetailPanel(agentId); };
-    actions.appendChild(remove);
+    actions.append(up, down, edit, remove);
     li.appendChild(actions);
     list.appendChild(li);
   }
@@ -731,6 +778,25 @@ function removeTask(agentId, taskId) {
   const tasks = state.tasksByAgent.get(agentId) || [];
   const next = tasks.filter(t => t.id !== taskId);
   state.tasksByAgent.set(agentId, next);
+}
+
+function updateTask(agentId, taskId, fields) {
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx === -1) return;
+  tasks[idx] = { ...tasks[idx], ...fields };
+  state.tasksByAgent.set(agentId, tasks);
+}
+
+function moveTask(agentId, taskId, direction) {
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx === -1) return;
+  const newIdx = Math.max(0, Math.min(tasks.length - 1, idx + direction));
+  if (newIdx === idx) return;
+  const [item] = tasks.splice(idx, 1);
+  tasks.splice(newIdx, 0, item);
+  state.tasksByAgent.set(agentId, tasks);
 }
 
 // -------------------- Tooltip --------------------
@@ -814,7 +880,7 @@ function createDepartmentCard(dept, x, y, design) {
 
   // Header: Department name prominent + manager
   const header = document.createElement('div');
-  header.className = 'dept-header';
+  header.className = 'dept-header tab-header';
 
   const titleWrap = document.createElement('div');
   const title = document.createElement('div');
@@ -832,6 +898,10 @@ function createDepartmentCard(dept, x, y, design) {
   styleDepartmentTag(deptTag, toDepartmentKey(dept.name), design);
 
   header.append(titleWrap, deptTag);
+  header.onclick = (e) => {
+    e.stopPropagation();
+    openDepartmentOverlay(dept.key);
+  };
 
   // Summary: agents and status breakdown
   const total = dept.agents.length;
@@ -888,7 +958,13 @@ function createDepartmentCard(dept, x, y, design) {
 
   controls.append(leftGroup, divider, rightGroup);
 
-  el.append(header, summary, controls);
+  if (state.overlayDeptKey === dept.key) {
+    el.classList.remove('tab-collapsed');
+    el.append(header, summary, controls);
+  } else {
+    el.classList.add('tab-collapsed');
+    el.append(header);
+  }
   enableDeptDrag(el);
   return el;
 }
@@ -929,6 +1005,82 @@ function openDepartment(deptKey) {
   // Implement by building a filtered projection during render
   renderDepartmentOrgView();
   zoomToFit();
+}
+
+// Overlay for Department Detail with agent list and nested agent view
+function openDepartmentOverlay(deptKey) {
+  state.overlayDeptKey = toDepartmentKey(deptKey);
+  const overlay = document.getElementById('overlay-panel');
+  const content = overlay.querySelector('.overlay-content');
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  renderDepartmentOverlayContent(content, state.overlayDeptKey);
+}
+
+function closeDepartmentOverlay() {
+  state.overlayDeptKey = null;
+  const overlay = document.getElementById('overlay-panel');
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function renderDepartmentOverlayContent(container, deptKey) {
+  container.innerHTML = '';
+  const deptName = formatDepartment(deptKey);
+  // Collect agents in department
+  const agents = [...state.nodes.values()].filter(n => n.level === 2 && toDepartmentKey(n.department) === deptKey);
+  const manager = [...state.nodes.values()].find(n => n.level === 1 && toDepartmentKey(n.department) === deptKey);
+
+  const header = document.createElement('div');
+  header.className = 'overlay-header';
+  const left = document.createElement('div');
+  left.innerHTML = `<div class="overlay-title">${deptName} Department</div>` + (manager ? `<div class="overlay-subtitle">Manager: ${manager.name}</div>` : '');
+  const right = document.createElement('div');
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-secondary';
+  btnClose.textContent = 'Close';
+  btnClose.onclick = closeDepartmentOverlay;
+  right.appendChild(btnClose);
+  header.append(left, right);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid agents';
+  for (const a of agents) {
+    const mini = document.createElement('div');
+    mini.className = 'agent-mini';
+    const miniHeader = document.createElement('div');
+    miniHeader.className = 'mini-header';
+    const title = document.createElement('div');
+    title.className = 'mini-title';
+    title.textContent = a.name;
+    const dot = document.createElement('span');
+    dot.className = `status-dot status-${a.status}`;
+    miniHeader.append(title, dot);
+    const meta = document.createElement('div');
+    meta.className = 'mini-meta';
+    const tasks = state.tasksByAgent.get(a.id) || [];
+    meta.textContent = `${a.role} • ${tasks.length} task${tasks.length!==1?'s':''}`;
+    const actions = document.createElement('div');
+    actions.className = 'mini-actions';
+    const btnOpen = document.createElement('button');
+    btnOpen.className = 'btn btn-primary';
+    btnOpen.textContent = 'Open Agent';
+    btnOpen.onclick = () => {
+      openDetailPanel(a.id);
+    };
+    const btnSelect = document.createElement('button');
+    btnSelect.className = 'btn btn-secondary';
+    btnSelect.textContent = 'Focus';
+    btnSelect.onclick = () => {
+      state.focusedId = a.id;
+      zoomToFocus();
+    };
+    actions.append(btnOpen, btnSelect);
+    mini.append(miniHeader, meta, actions);
+    grid.appendChild(mini);
+  }
+
+  container.append(header, grid);
 }
 
 function renderDepartmentOrgView() {
@@ -993,6 +1145,15 @@ function renderDepartmentOrgView() {
     path.addEventListener('pointerleave', hideTooltip);
     svg.appendChild(path);
   }
+}
+
+function toggleAgentTab(agentId) {
+  state.expandedAgentId = state.expandedAgentId === agentId ? null : agentId;
+  // Collapse any open department overlay if switching focus to an agent
+  if (state.expandedAgentId) {
+    closeDepartmentOverlay();
+  }
+  render();
 }
 
 // -------------------- Responsive Layout --------------------
