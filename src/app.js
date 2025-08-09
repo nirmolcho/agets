@@ -17,6 +17,8 @@ const state = {
   tasksByAgent: new Map(), // id -> Task[]
   zoom: { scale: 1, x: 0, y: 0 },
   focusedId: null,
+  mode: 'org', // 'org' | 'departments'
+  activeDepartment: null, // department key when viewing a specific department
 };
 
 /**
@@ -202,40 +204,50 @@ function render() {
 
   const design = getTheme();
 
-  for (const node of state.nodes.values()) {
-    const card = createAgentCard(node, design);
-    cardsLayer.appendChild(card);
+  if (state.mode === 'org') {
+    // Render full org view
+    for (const node of state.nodes.values()) {
+      const card = createAgentCard(node, design);
+      cardsLayer.appendChild(card);
+    }
+
+    // Hierarchy edges
+    for (const edge of state.edges) {
+      const from = state.nodes.get(edge.fromId);
+      const to = state.nodes.get(edge.toId);
+      if (!from || !to) continue;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', 'connection-path');
+      const start = { x: from.x + CARD_WIDTH / 2, y: from.y }; // top center of child
+      const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT }; // bottom center of parent
+      const d = curvedPath(start, end);
+      path.setAttribute('d', d);
+      styleConnectionsPath(path, design);
+      svg.appendChild(path);
+    }
+
+    // Testing edges with distinct styling and tooltips
+    for (const edge of state.testingEdges) {
+      const from = state.nodes.get(edge.fromId);
+      const to = state.nodes.get(edge.toId);
+      if (!from || !to) continue;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', 'connection-path testing');
+      const start = { x: from.x + CARD_WIDTH / 2, y: from.y + CARD_HEIGHT / 2 };
+      const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT / 2 };
+      const d = curvedPath(start, end);
+      path.setAttribute('d', d);
+      path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
+      path.addEventListener('pointerleave', hideTooltip);
+      svg.appendChild(path);
+    }
+  } else if (state.mode === 'departments') {
+    renderDepartmentsView(cardsLayer, svg, design);
   }
 
-  // Hierarchy edges
-  for (const edge of state.edges) {
-    const from = state.nodes.get(edge.fromId);
-    const to = state.nodes.get(edge.toId);
-    if (!from || !to) continue;
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('class', 'connection-path');
-    const start = { x: from.x + CARD_WIDTH / 2, y: from.y }; // top center of child
-    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT }; // bottom center of parent
-    const d = curvedPath(start, end);
-    path.setAttribute('d', d);
-    styleConnectionsPath(path, design);
-    svg.appendChild(path);
-  }
-
-  // Testing edges with distinct styling and tooltips
-  for (const edge of state.testingEdges) {
-    const from = state.nodes.get(edge.fromId);
-    const to = state.nodes.get(edge.toId);
-    if (!from || !to) continue;
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('class', 'connection-path testing');
-    const start = { x: from.x + CARD_WIDTH / 2, y: from.y + CARD_HEIGHT / 2 };
-    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT / 2 };
-    const d = curvedPath(start, end);
-    path.setAttribute('d', d);
-    path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
-    path.addEventListener('pointerleave', hideTooltip);
-    svg.appendChild(path);
+  // When a specific department is active, render the filtered org view
+  if (state.activeDepartment && state.mode === 'org') {
+    renderDepartmentOrgView();
   }
 
   resizeCanvasToContent();
@@ -415,11 +427,15 @@ function wireToolbar() {
   const btnImport = document.getElementById('btn-import');
   const fileImport = document.getElementById('file-import');
   const btnAdd = document.getElementById('btn-add-agent');
+  const btnDeptView = document.getElementById('btn-dept-view');
+  const btnOrgView = document.getElementById('btn-org-view');
 
   btnExport.onclick = exportConfiguration;
   btnImport.onclick = () => fileImport.click();
   fileImport.onchange = importConfiguration;
   btnAdd.onclick = addAgentFlow;
+  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; render(); zoomToFit(); };
+  if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; autoLayout(); render(); zoomToFit(); };
 }
 
 function exportConfiguration() {
@@ -713,6 +729,176 @@ export function removeAgent(agentId) {
   state.testingEdges = state.testingEdges.filter(e => e.fromId !== agentId && e.toId !== agentId);
   state.tasksByAgent.delete(agentId);
   render();
+}
+
+// -------------------- Departments View --------------------
+function renderDepartmentsView(cardsLayer, svg, design) {
+  // Build departments map { deptKey -> { name, managerId, agents: string[] } }
+  const departments = new Map();
+  for (const node of state.nodes.values()) {
+    const key = toDepartmentKey(node.department);
+    if (!departments.has(key)) departments.set(key, { key, name: node.department, managerId: null, agents: [] });
+    const d = departments.get(key);
+    if (node.level === 1) d.managerId = node.id;
+    if (node.level === 2) d.agents.push(node.id);
+  }
+
+  const deptCards = [];
+  const keys = [...departments.keys()].sort();
+  const cols = Math.max(1, Math.floor(1600 / (CARD_WIDTH + GAP_X)));
+  const rowGap = GAP_Y;
+  keys.forEach((key, idx) => {
+    const d = departments.get(key);
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = 60 + col * (CARD_WIDTH + GAP_X);
+    const y = 60 + row * (CARD_HEIGHT + rowGap);
+    const card = createDepartmentCard(d, x, y, design);
+    deptCards.push(card);
+  });
+
+  for (const c of deptCards) cardsLayer.appendChild(c);
+}
+
+function createDepartmentCard(dept, x, y, design) {
+  const el = document.createElement('div');
+  el.className = 'agent-card';
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  el.dataset.dept = dept.key;
+
+  const header = document.createElement('div');
+  header.className = 'agent-header';
+  const title = document.createElement('div');
+  title.className = 'agent-title';
+  title.textContent = `${formatDepartment(dept.name)} Department`;
+  const count = document.createElement('div');
+  count.className = 'agent-role';
+  const total = dept.agents.length;
+  const managerName = dept.managerId ? (state.nodes.get(dept.managerId)?.name || 'Manager') : 'No Manager';
+  count.textContent = `${managerName} • ${total} agents`;
+  header.append(title, count);
+
+  const controls = document.createElement('div');
+  controls.className = 'controls';
+  const btnAddDept = document.createElement('button');
+  btnAddDept.className = 'control-btn';
+  btnAddDept.textContent = 'Add Department';
+  btnAddDept.onclick = addDepartmentFlow;
+  const btnDeleteDept = document.createElement('button');
+  btnDeleteDept.className = 'control-btn';
+  btnDeleteDept.textContent = 'Delete Department';
+  btnDeleteDept.onclick = () => deleteDepartment(dept.key);
+  const btnOpen = document.createElement('button');
+  btnOpen.className = 'control-btn';
+  btnOpen.textContent = 'Open';
+  btnOpen.onclick = () => openDepartment(dept.key);
+  controls.append(btnOpen, btnAddDept, btnDeleteDept);
+
+  el.append(header, controls);
+  return el;
+}
+
+function addDepartmentFlow() {
+  const name = prompt('New department name (kebab-case, e.g., research-ops):');
+  if (!name) return;
+  const deptKey = toDepartmentKey(name);
+  // Create a manager placeholder for the new department
+  const managerRole = `${deptKey}-manager`;
+  if (state.nodes.has(managerRole)) { alert('Department already exists'); return; }
+  const managerName = `${formatDepartment(name)} Director`;
+  state.nodes.set(managerRole, { id: managerRole, name: managerName, role: managerRole, department: deptKey, level: 1, x: 0, y: 0, status: 'idle', tasks: [] });
+  state.edges.push({ fromId: managerRole, toId: 'chief-executive-officer' });
+  autoLayout();
+  render();
+  zoomToFit();
+}
+
+function deleteDepartment(deptKey) {
+  // remove all nodes whose department matches deptKey and their edges/testing links
+  const idsToDelete = [...state.nodes.values()].filter(n => toDepartmentKey(n.department) === toDepartmentKey(deptKey)).map(n => n.id);
+  for (const id of idsToDelete) {
+    state.nodes.delete(id);
+    state.tasksByAgent.delete(id);
+  }
+  state.edges = state.edges.filter(e => !idsToDelete.includes(e.fromId) && !idsToDelete.includes(e.toId));
+  state.testingEdges = state.testingEdges.filter(e => !idsToDelete.includes(e.fromId) && !idsToDelete.includes(e.toId));
+  render();
+  zoomToFit();
+}
+
+function openDepartment(deptKey) {
+  state.mode = 'org';
+  state.activeDepartment = toDepartmentKey(deptKey);
+  // Filter view to only nodes of this department + CEO (for context) and inter-department connectors
+  // For simplicity, we will visually de-emphasize others by not rendering them
+  // Implement by building a filtered projection during render
+  renderDepartmentOrgView();
+  zoomToFit();
+}
+
+function renderDepartmentOrgView() {
+  const cardsLayer = document.getElementById('cards-layer');
+  const svg = document.getElementById('connections');
+  cardsLayer.innerHTML = '';
+  svg.innerHTML = '';
+
+  const dept = state.activeDepartment;
+  if (!dept) { autoLayout(); render(); return; }
+
+  // Create a set of visible node ids (department nodes + their manager + CEO for anchor)
+  const visible = new Set();
+  for (const n of state.nodes.values()) {
+    if (toDepartmentKey(n.department) === dept || n.role === 'chief-executive-officer') visible.add(n.id);
+  }
+
+  // Place layout using existing coordinates but only render visible nodes/edges
+  const design = getTheme();
+  for (const id of visible) {
+    const node = state.nodes.get(id);
+    if (!node) continue;
+    const card = createAgentCard(node, design);
+    // Mark inter-department connectors: agents that test or are tested by outside departments
+    if (node.level === 2) {
+      const testsOutside = state.testingEdges.some(e => e.fromId === node.id && visible.has(e.toId) === false);
+      const testedByOutside = state.testingEdges.some(e => e.toId === node.id && visible.has(e.fromId) === false);
+      if (testsOutside || testedByOutside) {
+        card.style.outline = '2px solid #60a5fa';
+      }
+    }
+    cardsLayer.appendChild(card);
+  }
+
+  // Hierarchy edges within visible
+  for (const edge of state.edges) {
+    if (!visible.has(edge.fromId) || !visible.has(edge.toId)) continue;
+    const from = state.nodes.get(edge.fromId);
+    const to = state.nodes.get(edge.toId);
+    if (!from || !to) continue;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'connection-path');
+    const start = { x: from.x + CARD_WIDTH / 2, y: from.y };
+    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT };
+    path.setAttribute('d', curvedPath(start, end));
+    styleConnectionsPath(path, getTheme());
+    svg.appendChild(path);
+  }
+
+  // Testing edges where at least one end is visible (so we can show external connectors)
+  for (const edge of state.testingEdges) {
+    if (!visible.has(edge.fromId) && !visible.has(edge.toId)) continue;
+    const from = state.nodes.get(edge.fromId);
+    const to = state.nodes.get(edge.toId);
+    if (!from || !to) continue;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'connection-path testing');
+    const start = { x: from.x + CARD_WIDTH / 2, y: from.y + CARD_HEIGHT / 2 };
+    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT / 2 };
+    path.setAttribute('d', curvedPath(start, end));
+    path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
+    path.addEventListener('pointerleave', hideTooltip);
+    svg.appendChild(path);
+  }
 }
 
 init();
