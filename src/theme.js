@@ -17,6 +17,7 @@ function applyThemeToDocument(design) {
   const container = design?.elementStyling?.container ?? {};
   const cards = design?.elementStyling?.cards ?? {};
   const connections = design?.elementStyling?.connections?.lines ?? {};
+  const testing = design?.elementStyling?.connections?.testing ?? {};
 
   if (container.background) root.style.setProperty('--container-bg', container.background);
   if (cards.background) root.style.setProperty('--card-bg', cards.background);
@@ -25,6 +26,11 @@ function applyThemeToDocument(design) {
 
   if (container.fontFamily) document.body.style.fontFamily = container.fontFamily;
   if (container.minHeight) document.body.style.minHeight = container.minHeight;
+
+  // Testing connection CSS vars
+  if (testing.stroke) root.style.setProperty('--testing-line-stroke', testing.stroke);
+  if (testing.strokeWidth) root.style.setProperty('--testing-line-width', parseInt(testing.strokeWidth));
+  if (testing.strokeDasharray) root.style.setProperty('--testing-line-dash', testing.strokeDasharray);
 }
 
 export function styleDepartmentTag(el, department, design = themeDesign) {

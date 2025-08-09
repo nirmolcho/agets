@@ -29,9 +29,17 @@
       </div>
 
       <div id="canvas-container" class="canvas-container">
-        <svg id="connections" class="connections" xmlns="http://www.w3.org/2000/svg"></svg>
-        <div id="cards-layer" class="cards-layer"></div>
+        <div id="stage" class="stage">
+          <svg id="connections" class="connections" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="cards-layer" class="cards-layer"></div>
+        </div>
+        <div class="zoom-controls">
+          <button id="btn-full-view" class="btn btn-secondary" title="Zoom to Full View">Full View</button>
+          <button id="btn-focus-view" class="btn btn-secondary" title="Zoom to Focus">Zoom In</button>
+        </div>
       </div>
+      <div id="detail-panel" class="detail-panel hidden" aria-hidden="true"></div>
+      <div id="tooltip" class="tooltip hidden"></div>
     </div>
 
     <script type="module" src="/src/app.js"></script>

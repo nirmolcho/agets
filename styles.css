@@ -64,6 +64,10 @@ body {
   height: calc(100vh - 56px);
   overflow: auto;
 }
+.stage {
+  position: relative;
+  transform-origin: 0 0;
+}
 .connections {
   position: absolute;
   inset: 0;
@@ -76,6 +80,14 @@ body {
   inset: 0;
   width: 2000px;
   height: 1400px;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
 }
 
 .agent-card {
@@ -105,6 +117,48 @@ body {
 .control-btn { border: 1px solid #444; background: transparent; color: #ccc; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
 .control-btn:hover { background: #2a2a2a; color: #fff; }
 
-.connection-path { stroke: var(--line-stroke); stroke-width: 3; fill: none; opacity: 0.7; }
+.connection-path { stroke: var(--line-stroke); stroke-width: 3; fill: none; opacity: 0.7; pointer-events: auto; }
+
+/* Testing connection styles */
+.connection-path.testing {
+  stroke: var(--testing-line-stroke, #22c55e);
+  stroke-width: var(--testing-line-width, 2.5);
+  stroke-dasharray: var(--testing-line-dash, 6 6);
+  opacity: 0.9;
+}
+
+/* Agent detail panel */
+.detail-panel {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  width: 380px;
+  height: calc(100vh - 56px);
+  background: var(--card-bg);
+  border-left: 1px solid var(--card-border);
+  box-shadow: -8px 0 24px rgba(0,0,0,0.4);
+  padding: 16px;
+  overflow: auto;
+  z-index: 20;
+}
+.detail-panel.hidden { display: none; }
+.detail-panel h3 { margin: 0 0 8px; }
+.detail-panel .subtle { opacity: 0.8; font-size: 12px; margin-bottom: 12px; }
+.task-list { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.task-item { border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; background: #151515; }
+.task-item .meta { display: flex; gap: 8px; font-size: 12px; opacity: 0.85; }
+.task-actions { display: flex; gap: 8px; margin-top: 8px; }
+.task-actions .link { color: #9aa0ff; cursor: pointer; }
+.task-actions .link:hover { text-decoration: underline; }
+.task-form { display: grid; gap: 8px; margin-top: 16px; }
+.task-form input, .task-form select, .task-form textarea { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px; }
+.task-form textarea { min-height: 80px; }
+
+/* Tooltip for testing connections */
+.tooltip { position: fixed; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 6px 8px; font-size: 12px; pointer-events: none; z-index: 30; }
+.tooltip.hidden { display: none; }
+
+/* Empty states */
+.empty { opacity: 0.8; font-size: 13px; border: 1px dashed #333; padding: 12px; border-radius: 8px; text-align: center; }
 
 

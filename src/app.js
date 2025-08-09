@@ -11,9 +11,17 @@ const STATUS_VALUES = ['active', 'idle', 'error'];
  * Maintains in-memory nodes and edges for current canvas
  */
 const state = {
-  nodes: new Map(), // id -> node { id, name, role, department, level, x, y, status }
-  edges: [], // [{ fromId, toId }]
+  nodes: new Map(), // id -> node { id, name, role, department, level, x, y, status, tasks: Task[] }
+  edges: [], // hierarchy edges [{ fromId, toId }]
+  testingEdges: [], // testing edges [{ fromId, toId }]
+  tasksByAgent: new Map(), // id -> Task[]
+  zoom: { scale: 1, x: 0, y: 0 },
+  focusedId: null,
 };
+
+/**
+ * @typedef {{ id: string, title: string, description: string, priority: 'low'|'medium'|'high', dueDate?: string, createdAt: string }} Task
+ */
 
 async function init() {
   await loadTheme();
@@ -26,12 +34,15 @@ async function init() {
   render();
 
   wireToolbar();
+  wireZoomControls();
+  wireStagePanZoom();
   startStatusTicker();
 }
 
 function buildGraphFromOrganization(org) {
   state.nodes.clear();
   state.edges = [];
+  state.testingEdges = [];
 
   const ceo = org.organization.ceo;
   const ceoId = ceo.role;
@@ -70,8 +81,14 @@ function buildGraphFromOrganization(org) {
         level: agent.level,
         x: 0, y: 0,
         status: 'idle',
+        tasks: [],
       });
       state.edges.push({ fromId: agentId, toId: manager.role });
+
+      // Testing connections from this agent
+      for (const tested of (agent.testingConnections || [])) {
+        state.testingEdges.push({ fromId: agentId, toId: tested });
+      }
     }
   }
 }
@@ -120,6 +137,17 @@ function autoLayout() {
   }
 }
 
+function getAgentsForManager(managerId) {
+  const result = [];
+  for (const e of state.edges) {
+    if (e.toId === managerId) {
+      const n = state.nodes.get(e.fromId);
+      if (n && n.level === 2) result.push(n);
+    }
+  }
+  return result;
+}
+
 function render() {
   const cardsLayer = document.getElementById('cards-layer');
   const svg = document.getElementById('connections');
@@ -133,6 +161,7 @@ function render() {
     cardsLayer.appendChild(card);
   }
 
+  // Hierarchy edges
   for (const edge of state.edges) {
     const from = state.nodes.get(edge.fromId);
     const to = state.nodes.get(edge.toId);
@@ -146,6 +175,24 @@ function render() {
     styleConnectionsPath(path, design);
     svg.appendChild(path);
   }
+
+  // Testing edges with distinct styling and tooltips
+  for (const edge of state.testingEdges) {
+    const from = state.nodes.get(edge.fromId);
+    const to = state.nodes.get(edge.toId);
+    if (!from || !to) continue;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'connection-path testing');
+    const start = { x: from.x + CARD_WIDTH / 2, y: from.y + CARD_HEIGHT / 2 };
+    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT / 2 };
+    const d = curvedPath(start, end);
+    path.setAttribute('d', d);
+    path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
+    path.addEventListener('pointerleave', hideTooltip);
+    svg.appendChild(path);
+  }
+
+  applyStageTransform();
 }
 
 function curvedPath(start, end) {
@@ -210,9 +257,42 @@ function createAgentCard(node, design) {
   btnError.onclick = () => setStatus(node.id, 'error');
   controls.append(btnStart, btnStop, btnError);
 
+  if (node.level === 2) {
+    const btnRemoveAgent = document.createElement('button');
+    btnRemoveAgent.className = 'control-btn';
+    btnRemoveAgent.textContent = 'Remove Agent';
+    btnRemoveAgent.onclick = () => removeAgent(node.id);
+    controls.appendChild(btnRemoveAgent);
+  }
+
   el.append(header, deptTag, metrics, controls);
 
+  if (node.level === 1) {
+    const managerControls = document.createElement('div');
+    managerControls.className = 'controls';
+    const btnAddDeptAgent = document.createElement('button');
+    btnAddDeptAgent.className = 'control-btn';
+    btnAddDeptAgent.textContent = 'Add Agent to Dept';
+    btnAddDeptAgent.onclick = () => addAgentToDepartment(node.department);
+    managerControls.appendChild(btnAddDeptAgent);
+
+    const agents = getAgentsForManager(node.id);
+    if (agents.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No agents yet';
+      const quick = document.createElement('button');
+      quick.className = 'control-btn';
+      quick.textContent = 'Add Agent';
+      quick.onclick = () => addAgentToDepartment(node.department);
+      managerControls.appendChild(empty);
+      managerControls.appendChild(quick);
+    }
+    el.appendChild(managerControls);
+  }
+
   enableDrag(el);
+  el.addEventListener('click', () => openDetailPanel(node.id));
   return el;
 }
 
@@ -237,8 +317,8 @@ function enableDrag(el) {
     window.addEventListener('pointerup', onUp, { once: true });
   };
   const onMove = (e) => {
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+    const dx = (e.clientX - startX) / state.zoom.scale;
+    const dy = (e.clientY - startY) / state.zoom.scale;
     const id = el.dataset.id;
     const node = state.nodes.get(id);
     node.x = origX + dx;
@@ -270,6 +350,17 @@ function drawConnectionsOnly() {
     styleConnectionsPath(path, getTheme());
     svg.appendChild(path);
   }
+  for (const edge of state.testingEdges) {
+    const from = state.nodes.get(edge.fromId);
+    const to = state.nodes.get(edge.toId);
+    if (!from || !to) continue;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'connection-path testing');
+    const start = { x: from.x + CARD_WIDTH / 2, y: from.y + CARD_HEIGHT / 2 };
+    const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT / 2 };
+    path.setAttribute('d', curvedPath(start, end));
+    svg.appendChild(path);
+  }
 }
 
 function wireToolbar() {
@@ -289,6 +380,7 @@ function exportConfiguration() {
     version: 1,
     nodes: [...state.nodes.values()].map(n => ({ id: n.id, name: n.name, role: n.role, department: n.department, level: n.level, x: n.x, y: n.y, status: n.status })),
     edges: state.edges,
+    testingEdges: state.testingEdges,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -309,6 +401,7 @@ function importConfiguration(e) {
       state.nodes.clear();
       for (const n of json.nodes) state.nodes.set(n.id, { ...n });
       state.edges = json.edges || [];
+      state.testingEdges = json.testingEdges || [];
       render();
     } catch (err) {
       alert('Invalid configuration file');
@@ -333,7 +426,7 @@ function addAgentFlow() {
   const id = role;
   if (state.nodes.has(id)) { alert('A node with that role already exists'); return; }
   state.nodes.set(id, {
-    id, name, role, department, level: 2, x: manager.x, y: manager.y + CARD_HEIGHT + GAP_Y, status: 'idle'
+    id, name, role, department, level: 2, x: manager.x, y: manager.y + CARD_HEIGHT + GAP_Y, status: 'idle', tasks: []
   });
   state.edges.push({ fromId: id, toId: manager.id });
   render();
@@ -356,6 +449,221 @@ function toDepartmentKey(name) {
 }
 function formatDepartment(name) {
   return String(name || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// -------------------- Zoom & Pan --------------------
+function wireZoomControls() {
+  document.getElementById('btn-full-view').onclick = zoomToFit;
+  document.getElementById('btn-focus-view').onclick = zoomToFocus;
+}
+
+function wireStagePanZoom() {
+  const container = document.getElementById('canvas-container');
+  const stage = document.getElementById('stage');
+  let isPanning = false;
+  let startX = 0, startY = 0, origX = 0, origY = 0;
+
+  container.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return; // pinch to zoom on trackpad
+    e.preventDefault();
+    const scaleDelta = e.deltaY < 0 ? 1.1 : 0.9;
+    const newScale = clamp(state.zoom.scale * scaleDelta, 0.2, 2.5);
+    const rect = stage.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left);
+    const offsetY = (e.clientY - rect.top);
+    const wx = (offsetX - state.zoom.x) / state.zoom.scale;
+    const wy = (offsetY - state.zoom.y) / state.zoom.scale;
+    state.zoom.scale = newScale;
+    state.zoom.x = offsetX - wx * state.zoom.scale;
+    state.zoom.y = offsetY - wy * state.zoom.scale;
+    applyStageTransform();
+  }, { passive: false });
+
+  container.addEventListener('pointerdown', (e) => {
+    if (e.button !== 1 && !(e.button === 0 && e.altKey)) return; // middle click or Alt+Drag
+    isPanning = true;
+    startX = e.clientX; startY = e.clientY;
+    origX = state.zoom.x; origY = state.zoom.y;
+    container.setPointerCapture(e.pointerId);
+  });
+  container.addEventListener('pointermove', (e) => {
+    if (!isPanning) return;
+    state.zoom.x = origX + (e.clientX - startX);
+    state.zoom.y = origY + (e.clientY - startY);
+    applyStageTransform();
+  });
+  container.addEventListener('pointerup', () => { isPanning = false; });
+}
+
+function applyStageTransform() {
+  const stage = document.getElementById('stage');
+  stage.style.transform = `translate(${state.zoom.x}px, ${state.zoom.y}px) scale(${state.zoom.scale})`;
+}
+
+function zoomToFit() {
+  // Compute bounding box of all nodes
+  const nodes = [...state.nodes.values()];
+  if (nodes.length === 0) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of nodes) {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + CARD_WIDTH);
+    maxY = Math.max(maxY, n.y + CARD_HEIGHT);
+  }
+  const container = document.getElementById('canvas-container');
+  const padding = 60;
+  const boxWidth = maxX - minX + padding * 2;
+  const boxHeight = maxY - minY + padding * 2;
+  const scaleX = container.clientWidth / boxWidth;
+  const scaleY = container.clientHeight / boxHeight;
+  const scale = clamp(Math.min(scaleX, scaleY), 0.2, 2.5);
+  state.zoom.scale = scale;
+  state.zoom.x = -minX * scale + padding;
+  state.zoom.y = -minY * scale + padding;
+  state.focusedId = null;
+  applyStageTransform();
+}
+
+function zoomToFocus() {
+  const id = state.focusedId || 'chief-executive-officer';
+  const node = state.nodes.get(id);
+  if (!node) return;
+  const container = document.getElementById('canvas-container');
+  const desired = 1;
+  state.zoom.scale = desired;
+  state.zoom.x = container.clientWidth / 2 - (node.x + CARD_WIDTH / 2) * desired;
+  state.zoom.y = 80 - node.y * desired;
+  applyStageTransform();
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+// -------------------- Detail Panel & Tasks --------------------
+function openDetailPanel(agentId) {
+  state.focusedId = agentId;
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('hidden');
+  panel.setAttribute('aria-hidden', 'false');
+  renderDetailPanel(agentId);
+}
+
+function closeDetailPanel() {
+  const panel = document.getElementById('detail-panel');
+  panel.classList.add('hidden');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+function renderDetailPanel(agentId) {
+  const node = state.nodes.get(agentId);
+  if (!node) return;
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  const nextTask = tasks[0];
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.innerHTML = `<h3>${node.name}</h3><div class="subtle">${node.role} • ${formatDepartment(node.department)}</div>`;
+
+  const nextTaskBlock = document.createElement('div');
+  nextTaskBlock.innerHTML = nextTask
+    ? `<div><strong>Next Task:</strong> ${nextTask.title} <span class="subtle">(priority: ${nextTask.priority}${nextTask.dueDate ? ", due "+nextTask.dueDate : ''})</span></div>`
+    : `<div class="empty">No active tasks</div>`;
+
+  const list = document.createElement('ul');
+  list.className = 'task-list';
+  for (const t of tasks) {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `<div><strong>${t.title}</strong></div><div class="meta">${t.priority}${t.dueDate ? ' • Due '+t.dueDate : ''}</div>`;
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    const remove = document.createElement('span');
+    remove.className = 'link';
+    remove.textContent = 'Remove';
+    remove.onclick = () => { removeTask(agentId, t.id); renderDetailPanel(agentId); };
+    actions.appendChild(remove);
+    li.appendChild(actions);
+    list.appendChild(li);
+  }
+
+  const form = document.createElement('div');
+  form.className = 'task-form';
+  form.innerHTML = `
+    <input id="task-title" placeholder="Task title" />
+    <textarea id="task-desc" placeholder="Description"></textarea>
+    <select id="task-priority">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <input id="task-due" type="date" />
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" id="btn-add-task">Add Task</button>
+      <button class="btn btn-secondary" id="btn-close-panel">Close</button>
+    </div>
+  `;
+  panel.append(header, nextTaskBlock, list, form);
+
+  panel.querySelector('#btn-add-task').onclick = () => {
+    const title = panel.querySelector('#task-title').value.trim();
+    if (!title) return;
+    const description = panel.querySelector('#task-desc').value.trim();
+    const priority = panel.querySelector('#task-priority').value;
+    const dueDate = panel.querySelector('#task-due').value || undefined;
+    addTask(agentId, { title, description, priority, dueDate });
+    renderDetailPanel(agentId);
+  };
+  panel.querySelector('#btn-close-panel').onclick = closeDetailPanel;
+}
+
+function addTask(agentId, partial) {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  tasks.push({ id, title: partial.title, description: partial.description, priority: partial.priority, dueDate: partial.dueDate, createdAt: new Date().toISOString() });
+  state.tasksByAgent.set(agentId, tasks);
+}
+
+function removeTask(agentId, taskId) {
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  const next = tasks.filter(t => t.id !== taskId);
+  state.tasksByAgent.set(agentId, next);
+}
+
+// -------------------- Tooltip --------------------
+function showTooltip(x, y, text) {
+  const tip = document.getElementById('tooltip');
+  tip.textContent = text;
+  tip.style.left = `${x + 12}px`;
+  tip.style.top = `${y + 12}px`;
+  tip.classList.remove('hidden');
+}
+function hideTooltip() {
+  document.getElementById('tooltip').classList.add('hidden');
+}
+
+// -------------------- Department Agent Management --------------------
+// Simple flows using prompts for now with department preselection possible later
+export function addAgentToDepartment(department) {
+  const name = prompt('Agent display name:');
+  if (!name) return;
+  const role = prompt('Unique role identifier (kebab-case):');
+  if (!role) return;
+  const manager = [...state.nodes.values()].find(n => n.level === 1 && toDepartmentKey(n.department) === toDepartmentKey(department));
+  if (!manager) { alert('No manager found for that department'); return; }
+  if (state.nodes.has(role)) { alert('Role already exists'); return; }
+  state.nodes.set(role, { id: role, name, role, department, level: 2, x: manager.x, y: manager.y + CARD_HEIGHT + GAP_Y, status: 'idle', tasks: [] });
+  state.edges.push({ fromId: role, toId: manager.id });
+  render();
+}
+
+export function removeAgent(agentId) {
+  if (!state.nodes.has(agentId)) return;
+  state.nodes.delete(agentId);
+  state.edges = state.edges.filter(e => e.fromId !== agentId && e.toId !== agentId);
+  state.testingEdges = state.testingEdges.filter(e => e.fromId !== agentId && e.toId !== agentId);
+  state.tasksByAgent.delete(agentId);
+  render();
 }
 
 init();
