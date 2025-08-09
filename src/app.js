@@ -24,10 +24,20 @@ const state = {
   deptPositions: new Map(), // deptKey -> { x, y }
   expandedAgentId: null, // only one expanded agent card at a time
   overlayDeptKey: null, // department overlay open key
+  overlaySelectedAgentId: null, // selected agent inside overlay
 };
 
 /**
- * @typedef {{ id: string, title: string, description: string, priority: 'low'|'medium'|'high', dueDate?: string, createdAt: string }} Task
+ * @typedef {{
+ *  id: string,
+ *  title: string,
+ *  description: string,
+ *  priority: 'low'|'medium'|'high',
+ *  status: 'pending'|'in-progress'|'done',
+ *  estimateMinutes?: number,
+ *  dueDate?: string,
+ *  createdAt: string
+ * }} Task
  */
 
 async function init() {
@@ -660,21 +670,40 @@ function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function openDetailPanel(agentId) {
   state.focusedId = agentId;
   const panel = document.getElementById('detail-panel');
-  panel.classList.remove('hidden');
+  const backdrop = document.getElementById('agent-backdrop');
+  panel.classList.add('open');
   panel.setAttribute('aria-hidden', 'false');
+  if (backdrop) {
+    backdrop.classList.remove('hidden');
+    backdrop.classList.add('visible');
+    backdrop.onclick = closeDetailPanel;
+  }
   renderDetailPanel(agentId);
+  setTimeout(() => panel.querySelector('button, input, select, textarea')?.focus(), 0);
+  window.addEventListener('keydown', onEscapeClosePanel);
 }
 
 function closeDetailPanel() {
   const panel = document.getElementById('detail-panel');
-  panel.classList.add('hidden');
+  const backdrop = document.getElementById('agent-backdrop');
+  panel.classList.remove('open');
   panel.setAttribute('aria-hidden', 'true');
+  if (backdrop) {
+    backdrop.classList.remove('visible');
+    backdrop.classList.add('hidden');
+    backdrop.onclick = null;
+  }
+  window.removeEventListener('keydown', onEscapeClosePanel);
+}
+
+function onEscapeClosePanel(e) {
+  if (e.key === 'Escape') closeDetailPanel();
 }
 
 function renderDetailPanel(agentId) {
   const node = state.nodes.get(agentId);
   if (!node) return;
-  const tasks = state.tasksByAgent.get(agentId) || [];
+  const tasks = sortTasks(state.tasksByAgent.get(agentId) || [], 'priority');
   const nextTask = tasks[0];
   const panel = document.getElementById('detail-panel');
   panel.innerHTML = '';
@@ -682,9 +711,13 @@ function renderDetailPanel(agentId) {
   const header = document.createElement('div');
   header.innerHTML = `<h3>${node.name}</h3><div class="subtle">${node.role} • ${formatDepartment(node.department)}</div>`;
 
+  const description = document.createElement('div');
+  description.className = 'subtle';
+  description.textContent = getAgentGenericPrompt(node);
+
   const nextTaskBlock = document.createElement('div');
   if (nextTask) {
-    nextTaskBlock.innerHTML = `<div><strong>Next Task:</strong> ${nextTask.title} <span class="subtle">(priority: ${nextTask.priority}${nextTask.dueDate ? ", due "+nextTask.dueDate : ''})</span></div>`;
+    nextTaskBlock.innerHTML = `<div><strong>Next Task:</strong> ${nextTask.title} <span class="subtle">(priority: ${nextTask.priority}${nextTask.dueDate ? ', due '+nextTask.dueDate : ''}${formatEstimate(nextTask)})</span></div>`;
   } else {
     const empty = document.createElement('div');
     empty.className = 'empty';
@@ -695,18 +728,56 @@ function renderDetailPanel(agentId) {
     quick.onclick = () => {
       const title = prompt('Task title?');
       if (!title) return;
-      addTask(agentId, { title, description: '', priority: 'medium' });
+      addTask(agentId, { title, description: '', priority: 'medium', status: 'pending', estimateMinutes: 30 });
       renderDetailPanel(agentId);
     };
     nextTaskBlock.append(empty, quick);
   }
+
+  const timeSummary = document.createElement('div');
+  timeSummary.className = 'time-summary';
+  const totalMins = tasks.filter(t => t.status !== 'done').reduce((sum, t) => sum + (t.estimateMinutes || 0), 0);
+  const totalText = document.createElement('div');
+  totalText.className = 'time-total';
+  totalText.textContent = `Total estimated time (pending/in-progress): ${formatMinutes(totalMins)}`;
+  const chart = document.createElement('div');
+  chart.className = 'time-chart';
+  const priorities = ['low','medium','high'];
+  for (const p of priorities) {
+    const mins = tasks.filter(t => t.status !== 'done' && t.priority === p).reduce((s, t) => s + (t.estimateMinutes || 0), 0);
+    const bar = document.createElement('div');
+    bar.className = `time-bar ${p}`;
+    const heightPct = totalMins > 0 ? Math.max(6, Math.round((mins / totalMins) * 100)) : 6;
+    bar.style.height = `${heightPct}%`;
+    bar.title = `${p} • ${formatMinutes(mins)}`;
+    chart.appendChild(bar);
+  }
+  timeSummary.append(totalText, chart);
 
   const list = document.createElement('ul');
   list.className = 'task-list';
   for (const t of tasks) {
     const li = document.createElement('li');
     li.className = 'task-item';
-    li.innerHTML = `<div><strong>${t.title}</strong></div><div class="meta">${t.priority}${t.dueDate ? ' • Due '+t.dueDate : ''}</div>`;
+    const top = document.createElement('div');
+    const titleEl = document.createElement('strong');
+    titleEl.textContent = t.title;
+    const statusPill = document.createElement('span');
+    statusPill.className = `task-status ${t.status || 'pending'}`;
+    statusPill.textContent = (t.status || 'pending').replace('-', ' ');
+    statusPill.setAttribute('role', 'status');
+    statusPill.style.marginLeft = '8px';
+    top.append(titleEl, statusPill);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const pieces = [t.priority];
+    if (t.dueDate) pieces.push('Due ' + t.dueDate);
+    const est = formatEstimate(t);
+    if (est) pieces.push(est.replace(/^,\s*/, ''));
+    meta.textContent = pieces.join(' • ');
+
+    li.append(top, meta);
     const actions = document.createElement('div');
     actions.className = 'task-actions';
     const up = document.createElement('span');
@@ -724,15 +795,22 @@ function renderDetailPanel(agentId) {
       const title = prompt('Title', t.title) ?? t.title;
       const description = prompt('Description', t.description || '') ?? t.description;
       const priority = prompt('Priority (low|medium|high)', t.priority) ?? t.priority;
+      const status = prompt('Status (pending|in-progress|done)', t.status || 'pending') ?? (t.status || 'pending');
+      const estimateStr = prompt('Estimate minutes (blank to keep)', String(t.estimateMinutes ?? '')) || undefined;
+      const estimateMinutes = estimateStr ? parseInt(estimateStr, 10) : t.estimateMinutes;
       const dueDate = prompt('Due date (YYYY-MM-DD, blank to clear)', t.dueDate || '') || undefined;
-      updateTask(agentId, t.id, { title, description, priority, dueDate });
+      updateTask(agentId, t.id, { title, description, priority, status, estimateMinutes, dueDate });
       renderDetailPanel(agentId);
     };
     const remove = document.createElement('span');
     remove.className = 'link';
     remove.textContent = 'Remove';
     remove.onclick = () => { removeTask(agentId, t.id); renderDetailPanel(agentId); };
-    actions.append(up, down, edit, remove);
+    const toggle = document.createElement('span');
+    toggle.className = 'link';
+    toggle.textContent = (t.status || 'pending') === 'done' ? 'Mark Pending' : 'Mark Done';
+    toggle.onclick = () => { updateTask(agentId, t.id, { status: (t.status || 'pending') === 'done' ? 'pending' : 'done' }); renderDetailPanel(agentId); };
+    actions.append(up, down, edit, toggle, remove);
     li.appendChild(actions);
     list.appendChild(li);
   }
@@ -747,21 +825,30 @@ function renderDetailPanel(agentId) {
       <option value="medium" selected>Medium</option>
       <option value="high">High</option>
     </select>
+    <select id=\"task-status\">
+      <option value=\"pending\" selected>Pending</option>
+      <option value=\"in-progress\">In Progress</option>
+      <option value=\"done\">Done</option>
+    </select>
+    <input id=\"task-estimate\" type=\"number\" min=\"0\" step=\"5\" placeholder=\"Estimate (minutes)\" />
     <input id="task-due" type="date" />
     <div style="display:flex; gap:8px;">
       <button class="btn btn-primary" id="btn-add-task">Add Task</button>
       <button class="btn btn-secondary" id="btn-close-panel">Close</button>
     </div>
   `;
-  panel.append(header, nextTaskBlock, list, form);
+  panel.append(header, description, nextTaskBlock, timeSummary, list, form);
 
   panel.querySelector('#btn-add-task').onclick = () => {
     const title = panel.querySelector('#task-title').value.trim();
     if (!title) return;
     const description = panel.querySelector('#task-desc').value.trim();
     const priority = panel.querySelector('#task-priority').value;
+    const status = panel.querySelector('#task-status').value;
+    const estimateStr = panel.querySelector('#task-estimate').value;
+    const estimateMinutes = estimateStr ? parseInt(estimateStr, 10) : undefined;
     const dueDate = panel.querySelector('#task-due').value || undefined;
-    addTask(agentId, { title, description, priority, dueDate });
+    addTask(agentId, { title, description, priority, status, estimateMinutes, dueDate });
     renderDetailPanel(agentId);
   };
   panel.querySelector('#btn-close-panel').onclick = closeDetailPanel;
@@ -770,7 +857,15 @@ function renderDetailPanel(agentId) {
 function addTask(agentId, partial) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   const tasks = state.tasksByAgent.get(agentId) || [];
-  tasks.push({ id, title: partial.title, description: partial.description, priority: partial.priority, dueDate: partial.dueDate, createdAt: new Date().toISOString() });
+  tasks.push({
+    id,
+    title: partial.title,
+    description: partial.description,
+    priority: partial.priority || 'medium',
+    status: partial.status || 'pending',
+    dueDate: partial.dueDate,
+    createdAt: new Date().toISOString(),
+  });
   state.tasksByAgent.set(agentId, tasks);
 }
 
@@ -1014,14 +1109,26 @@ function openDepartmentOverlay(deptKey) {
   const content = overlay.querySelector('.overlay-content');
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
+  // Dim background but keep interactive
+  const container = document.getElementById('canvas-container');
+  container?.classList.add('dimmed');
+  // Close on ESC
+  window.addEventListener('keydown', onOverlayKeyDown);
+  // Close on outside click (any click not inside overlay content)
+  document.addEventListener('click', onDocumentClickOutsideOverlay, true);
   renderDepartmentOverlayContent(content, state.overlayDeptKey);
 }
 
 function closeDepartmentOverlay() {
   state.overlayDeptKey = null;
+  state.overlaySelectedAgentId = null;
   const overlay = document.getElementById('overlay-panel');
   overlay.classList.add('hidden');
   overlay.setAttribute('aria-hidden', 'true');
+  const container = document.getElementById('canvas-container');
+  container?.classList.remove('dimmed');
+  window.removeEventListener('keydown', onOverlayKeyDown);
+  document.removeEventListener('click', onDocumentClickOutsideOverlay, true);
 }
 
 function renderDepartmentOverlayContent(container, deptKey) {
@@ -1048,6 +1155,9 @@ function renderDepartmentOverlayContent(container, deptKey) {
   for (const a of agents) {
     const mini = document.createElement('div');
     mini.className = 'agent-mini';
+    mini.setAttribute('tabindex', '0');
+    mini.setAttribute('role', 'button');
+    mini.setAttribute('aria-pressed', String(state.overlaySelectedAgentId === a.id));
     const miniHeader = document.createElement('div');
     miniHeader.className = 'mini-header';
     const title = document.createElement('div');
@@ -1059,14 +1169,15 @@ function renderDepartmentOverlayContent(container, deptKey) {
     const meta = document.createElement('div');
     meta.className = 'mini-meta';
     const tasks = state.tasksByAgent.get(a.id) || [];
-    meta.textContent = `${a.role} • ${tasks.length} task${tasks.length!==1?'s':''}`;
+    meta.textContent = `${a.role} • ${tasks.length ? tasks.length + ' active task' + (tasks.length!==1?'s':'') : 'Idle'}`;
     const actions = document.createElement('div');
     actions.className = 'mini-actions';
     const btnOpen = document.createElement('button');
     btnOpen.className = 'btn btn-primary';
-    btnOpen.textContent = 'Open Agent';
+    btnOpen.textContent = 'Show Details';
     btnOpen.onclick = () => {
-      openDetailPanel(a.id);
+      state.overlaySelectedAgentId = a.id;
+      renderDepartmentOverlayContent(container, deptKey);
     };
     const btnSelect = document.createElement('button');
     btnSelect.className = 'btn btn-secondary';
@@ -1077,10 +1188,118 @@ function renderDepartmentOverlayContent(container, deptKey) {
     };
     actions.append(btnOpen, btnSelect);
     mini.append(miniHeader, meta, actions);
+    mini.onclick = () => { state.overlaySelectedAgentId = a.id; renderDepartmentOverlayContent(container, deptKey); };
+    mini.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); state.overlaySelectedAgentId = a.id; renderDepartmentOverlayContent(container, deptKey); } };
     grid.appendChild(mini);
   }
 
   container.append(header, grid);
+
+  // Details area for selected agent
+  if (state.overlaySelectedAgentId) {
+    const details = document.createElement('div');
+    details.className = 'overlay-agent-details';
+    renderOverlayAgentDetails(details, state.overlaySelectedAgentId, deptKey, container);
+    container.appendChild(details);
+  }
+}
+
+function renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer) {
+  const node = state.nodes.get(agentId);
+  if (!node) { wrapper.innerHTML = ''; return; }
+  const tasks = state.tasksByAgent.get(agentId) || [];
+  const current = tasks[0];
+  wrapper.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'details-header';
+  head.innerHTML = `<div><div class="details-title">${node.name}</div><div class="details-sub">${node.role} • ${formatDepartment(node.department)}</div></div>`;
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-secondary';
+  btnClose.textContent = 'Close Details';
+  btnClose.onclick = () => { state.overlaySelectedAgentId = null; renderDepartmentOverlayContent(overlayContainer, deptKey); };
+  head.appendChild(btnClose);
+  const status = document.createElement('div');
+  status.style.marginTop = '6px';
+  status.innerHTML = current ? `<strong>Working on:</strong> ${current.title}` : '<span class="subtle">Idle</span>';
+
+  const list = document.createElement('ul');
+  list.className = 'task-list';
+  for (const t of tasks) {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `<div><strong>${t.title}</strong></div><div class="meta">${t.priority} • ${t.status}${t.dueDate ? ' • Due '+t.dueDate : ''}</div>`;
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    const up = document.createElement('span'); up.className = 'link'; up.textContent = 'Up'; up.onclick = () => { moveTask(agentId, t.id, -1); renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer); };
+    const down = document.createElement('span'); down.className = 'link'; down.textContent = 'Down'; down.onclick = () => { moveTask(agentId, t.id, 1); renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer); };
+    const edit = document.createElement('span'); edit.className = 'link'; edit.textContent = 'Edit'; edit.onclick = () => {
+      const title = prompt('Title', t.title) ?? t.title;
+      const description = prompt('Description', t.description || '') ?? t.description;
+      const priority = prompt('Priority (low|medium|high)', t.priority) ?? t.priority;
+      const status = prompt('Status (pending|in-progress|done)', t.status || 'pending') ?? t.status;
+      const dueDate = prompt('Due date (YYYY-MM-DD, blank to clear)', t.dueDate || '') || undefined;
+      updateTask(agentId, t.id, { title, description, priority, status, dueDate });
+      renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer);
+    };
+    const remove = document.createElement('span'); remove.className = 'link'; remove.textContent = 'Remove'; remove.onclick = () => { removeTask(agentId, t.id); renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer); };
+    actions.append(up, down, edit, remove);
+    li.appendChild(actions);
+    list.appendChild(li);
+  }
+
+  const form = document.createElement('div');
+  form.className = 'task-form';
+  form.innerHTML = `
+    <input id="ov-task-title" placeholder="Task title" />
+    <textarea id="ov-task-desc" placeholder="Description"></textarea>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <select id="ov-task-priority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+      <select id="ov-task-status">
+        <option value="pending" selected>Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <input id="ov-task-due" type="date" />
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" id="ov-btn-add-task">Add Task</button>
+      <button class="btn btn-secondary" id="ov-btn-close-overlay">Close Panel</button>
+    </div>
+  `;
+  form.querySelector('#ov-btn-add-task').onclick = () => {
+    const title = form.querySelector('#ov-task-title').value.trim();
+    if (!title) return;
+    const description = form.querySelector('#ov-task-desc').value.trim();
+    const priority = form.querySelector('#ov-task-priority').value;
+    const statusSel = form.querySelector('#ov-task-status').value;
+    const dueDate = form.querySelector('#ov-task-due').value || undefined;
+    addTask(agentId, { title, description, priority, status: statusSel, dueDate });
+    renderOverlayAgentDetails(wrapper, agentId, deptKey, overlayContainer);
+  };
+  form.querySelector('#ov-btn-close-overlay').onclick = closeDepartmentOverlay;
+
+  wrapper.append(head, status, list, form);
+}
+
+function onOverlayKeyDown(e) {
+  if (e.key === 'Escape') {
+    closeDepartmentOverlay();
+  }
+}
+
+function onDocumentClickOutsideOverlay(e) {
+  const overlay = document.getElementById('overlay-panel');
+  if (!overlay || overlay.classList.contains('hidden')) return;
+  const content = overlay.querySelector('.overlay-content');
+  if (!content) return;
+  if (!content.contains(e.target)) {
+    // Clicked outside panel; close it
+    closeDepartmentOverlay();
+  }
 }
 
 function renderDepartmentOrgView() {

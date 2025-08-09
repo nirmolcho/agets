@@ -130,16 +130,20 @@ body {
   position: fixed;
   top: 56px;
   right: 0;
-  width: 380px;
+  width: 420px;
+  max-width: 92vw;
   height: calc(100vh - 56px);
   background: var(--card-bg);
   border-left: 1px solid var(--card-border);
   box-shadow: -8px 0 24px rgba(0,0,0,0.4);
   padding: 16px;
   overflow: auto;
-  z-index: 20;
+  z-index: 45;
+  transform: translateX(100%);
+  transition: transform 220ms ease;
 }
-.detail-panel.hidden { display: none; }
+.detail-panel.open { transform: translateX(0); }
+.detail-panel[aria-hidden="true"] { pointer-events: none; }
 .detail-panel h3 { margin: 0 0 8px; }
 .detail-panel .subtle { opacity: 0.8; font-size: 12px; margin-bottom: 12px; }
 .task-list { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
@@ -151,6 +155,33 @@ body {
 .task-form { display: grid; gap: 8px; margin-top: 16px; }
 .task-form input, .task-form select, .task-form textarea { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px; }
 .task-form textarea { min-height: 80px; }
+
+/* Task status pills */
+.task-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
+.task-status.pending { background: #2a2a1a; color: #f5d76e; border: 1px solid #6a5b2a; }
+.task-status.in-progress { background: #1a2a2a; color: #6ee7d8; border: 1px solid #2a6a6a; }
+.task-status.done { background: #1a2a1a; color: #86efac; border: 1px solid #2a6a2a; }
+
+/* Time summary */
+.time-summary { display: grid; gap: 8px; margin: 8px 0 12px; }
+.time-total { font-size: 13px; opacity: 0.9; }
+.time-chart { width: 100%; height: 64px; border: 1px solid #2a2a2a; border-radius: 8px; background: #101010; padding: 6px; display: grid; align-items: end; grid-auto-flow: column; gap: 6px; }
+.time-bar { background: #4a53d8; border-radius: 4px 4px 0 0; }
+.time-bar.low { background: #60a5fa; }
+.time-bar.medium { background: #8b5cf6; }
+.time-bar.high { background: #f472b6; }
+
+/* Backdrop for agent panel */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.backdrop.hidden { display: none; }
+.backdrop.visible { display: block; opacity: 1; }
 
 /* Tooltip for testing connections */
 .tooltip { position: fixed; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 6px 8px; font-size: 12px; pointer-events: none; z-index: 30; }
@@ -203,16 +234,18 @@ body {
 .overlay-panel {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.35);
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
   z-index: 40;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  /* Allow underlying org chart to remain interactive */
+  pointer-events: none;
 }
 .overlay-panel.hidden { display: none; }
 .overlay-content {
-  width: min(1080px, 100%);
+  width: clamp(360px, 45vw, 840px);
   max-width: 100%;
   height: 100%;
   background: var(--card-bg);
@@ -220,7 +253,14 @@ body {
   box-shadow: -8px 0 24px rgba(0,0,0,0.5);
   padding: 20px;
   overflow: auto;
+  /* Slide-in animation */
+  transform: translateX(100%);
+  transition: transform 240ms ease;
+  /* Capture interactions inside panel */
+  pointer-events: auto;
 }
+/* When panel is visible, slide content in */
+.overlay-panel:not(.hidden) .overlay-content { transform: translateX(0); }
 .overlay-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .overlay-title { font-size: 22px; font-weight: 800; }
 .overlay-subtitle { font-size: 13px; opacity: 0.85; }
@@ -231,6 +271,20 @@ body {
 .agent-mini .mini-title { font-weight: 700; }
 .mini-meta { font-size: 12px; opacity: 0.85; }
 .mini-actions { display: flex; gap: 8px; }
+
+/* Dim but keep interactive when overlay is open */
+.canvas-container.dimmed { filter: blur(1px) brightness(0.95); transition: filter 200ms ease; }
+
+/* Overlay agent details section */
+.overlay-agent-details { border: 1px solid var(--card-border); background: #151515; border-radius: 12px; padding: 14px; margin-top: 8px; }
+.overlay-agent-details .details-header { display: flex; align-items: center; justify-content: space-between; }
+.overlay-agent-details .details-title { font-weight: 800; }
+.overlay-agent-details .details-sub { font-size: 12px; opacity: 0.85; }
+.overlay-agent-details .task-list { margin-top: 10px; }
+
+@media (max-width: 720px) {
+  .overlay-content { width: 100%; }
+}
 
 .dept-controls {
   display: grid;
