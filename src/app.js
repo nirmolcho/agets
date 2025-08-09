@@ -777,42 +777,90 @@ function renderDepartmentsView(cardsLayer, svg, design) {
 
 function createDepartmentCard(dept, x, y, design) {
   const el = document.createElement('div');
-  el.className = 'agent-card';
+  el.className = 'agent-card dept-card';
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
   el.style.width = `${CARD_WIDTH}px`;
   el.style.minHeight = `${CARD_HEIGHT}px`;
   el.dataset.dept = dept.key;
 
+  // Header: Department name prominent + manager
   const header = document.createElement('div');
-  header.className = 'agent-header';
-  const title = document.createElement('div');
-  title.className = 'agent-title';
-  title.textContent = `${formatDepartment(dept.name)} Department`;
-  const count = document.createElement('div');
-  count.className = 'agent-role';
-  const total = dept.agents.length;
-  const managerName = dept.managerId ? (state.nodes.get(dept.managerId)?.name || 'Manager') : 'No Manager';
-  count.textContent = `${managerName} • ${total} agents`;
-  header.append(title, count);
+  header.className = 'dept-header';
 
+  const titleWrap = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'dept-title';
+  title.textContent = `${formatDepartment(dept.name)} Department`;
+  const managerName = dept.managerId ? (state.nodes.get(dept.managerId)?.name || 'Manager') : 'No Manager';
+  const subtitle = document.createElement('div');
+  subtitle.className = 'dept-subtitle';
+  subtitle.textContent = `Manager: ${managerName}`;
+  titleWrap.append(title, subtitle);
+
+  const deptTag = document.createElement('span');
+  deptTag.className = 'dept-tag';
+  deptTag.textContent = formatDepartment(dept.name);
+  styleDepartmentTag(deptTag, toDepartmentKey(dept.name), design);
+
+  header.append(titleWrap, deptTag);
+
+  // Summary: agents and status breakdown
+  const total = dept.agents.length;
+  const summary = document.createElement('div');
+  summary.className = 'dept-meta';
+  const statusCounts = { active: 0, idle: 0, error: 0 };
+  for (const agentId of dept.agents) {
+    const n = state.nodes.get(agentId);
+    if (n && statusCounts.hasOwnProperty(n.status)) statusCounts[n.status]++;
+  }
+  summary.innerHTML = `
+    <div><strong>${total}</strong> agents</div>
+    <div class="meta-pill"><span class="status-dot status-active"></span>${statusCounts.active} active</div>
+    <div class="meta-pill"><span class="status-dot status-idle"></span>${statusCounts.idle} idle</div>
+    <div class="meta-pill"><span class="status-dot status-error"></span>${statusCounts.error} error</div>
+  `;
+
+  // Controls: grouped for hierarchy and separation
   const controls = document.createElement('div');
-  controls.className = 'controls';
-  const btnAddDept = document.createElement('button');
-  btnAddDept.className = 'control-btn';
-  btnAddDept.textContent = 'Add Department';
-  btnAddDept.onclick = addDepartmentFlow;
-  const btnDeleteDept = document.createElement('button');
-  btnDeleteDept.className = 'control-btn';
-  btnDeleteDept.textContent = 'Delete Department';
-  btnDeleteDept.onclick = () => deleteDepartment(dept.key);
+  controls.className = 'controls dept-controls';
+
+  const leftGroup = document.createElement('div');
+  leftGroup.className = 'control-group';
   const btnOpen = document.createElement('button');
   btnOpen.className = 'control-btn';
   btnOpen.textContent = 'Open';
+  btnOpen.setAttribute('aria-label', `Open ${formatDepartment(dept.name)} department`);
   btnOpen.onclick = () => openDepartment(dept.key);
-  controls.append(btnOpen, btnAddDept, btnDeleteDept);
+  const btnAddAgent = document.createElement('button');
+  btnAddAgent.className = 'control-btn';
+  btnAddAgent.textContent = 'Add Agent';
+  btnAddAgent.setAttribute('aria-label', `Add agent to ${formatDepartment(dept.name)} department`);
+  btnAddAgent.onclick = () => addAgentToDepartment(dept.name);
+  // Optional: keep Add Department here as a secondary control
+  const btnAddDept = document.createElement('button');
+  btnAddDept.className = 'control-btn';
+  btnAddDept.textContent = 'Add Department';
+  btnAddDept.setAttribute('aria-label', 'Add a new department');
+  btnAddDept.onclick = addDepartmentFlow;
+  leftGroup.append(btnOpen, btnAddAgent, btnAddDept);
 
-  el.append(header, controls);
+  const divider = document.createElement('div');
+  divider.className = 'control-divider';
+  divider.setAttribute('role', 'separator');
+
+  const rightGroup = document.createElement('div');
+  rightGroup.className = 'control-group';
+  const btnDeleteDept = document.createElement('button');
+  btnDeleteDept.className = 'control-btn danger';
+  btnDeleteDept.textContent = 'Delete Department';
+  btnDeleteDept.setAttribute('aria-label', `Delete ${formatDepartment(dept.name)} department`);
+  btnDeleteDept.onclick = () => deleteDepartment(dept.key);
+  rightGroup.append(btnDeleteDept);
+
+  controls.append(leftGroup, divider, rightGroup);
+
+  el.append(header, summary, controls);
   return el;
 }
 

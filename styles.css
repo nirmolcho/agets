@@ -159,4 +159,69 @@ body {
 /* Empty states */
 .empty { opacity: 0.8; font-size: 13px; border: 1px dashed #333; padding: 12px; border-radius: 8px; text-align: center; }
 
+/* Department card layout enhancements */
+.dept-card {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 10px;
+}
+.dept-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.dept-title { font-size: 16px; font-weight: 800; }
+.dept-subtitle { font-size: 12px; opacity: 0.8; }
+
+.dept-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12px;
+  opacity: 0.95;
+}
+.dept-meta .meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #2a2a2a;
+  border-radius: 999px;
+  background: #151515;
+}
+
+.dept-controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.dept-controls .control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dept-controls .control-divider {
+  width: 1px;
+  height: 100%;
+  background: #2a2a2a;
+}
+.control-btn.danger {
+  border-color: #7a2b2b;
+  color: #ffb4b4;
+}
+.control-btn.danger:hover {
+  background: #3a1515;
+  color: #fff;
+}
+
+/* Responsiveness: stack controls on narrow cards */
+@media (max-width: 720px) {
+  .dept-controls { grid-template-columns: 1fr; }
+  .dept-controls .control-divider { display: none; }
+}
+
 
