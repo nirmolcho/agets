@@ -858,6 +858,12 @@ function renderDetailPanel(agentId) {
   panel.querySelector('#btn-close-panel').onclick = closeDetailPanel;
 }
 
+function getAgentGenericPrompt(node) {
+  // Basic generic description; can be customized per role later
+  const role = String(node.role || '').replace(/-/g, ' ');
+  return `This agent specializes in ${role} related workflows, focusing on reliability and quality.`;
+}
+
 function addTask(agentId, partial) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   const tasks = state.tasksByAgent.get(agentId) || [];
