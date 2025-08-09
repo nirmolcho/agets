@@ -94,47 +94,93 @@ function buildGraphFromOrganization(org) {
 }
 
 function autoLayout() {
-  // Row 0: CEO centered
-  const ceo = state.nodes.get('chief-executive-officer');
-  if (!ceo) return;
-  ceo.x = 600 - CARD_WIDTH / 2;
-  ceo.y = 40;
-
-  // Row 1: managers
-  const managers = [...state.nodes.values()].filter(n => n.level === 1);
-  managers.sort((a, b) => a.department.localeCompare(b.department));
-  const totalWidthManagers = managers.length * CARD_WIDTH + (managers.length - 1) * GAP_X;
-  let startXManagers = Math.max(40, 600 - totalWidthManagers / 2);
-  const yManagers = ceo.y + CARD_HEIGHT + GAP_Y;
-  for (const m of managers) {
-    m.x = startXManagers;
-    m.y = yManagers;
-    startXManagers += CARD_WIDTH + GAP_X;
+  // Build children map from hierarchy edges (edge.fromId child -> edge.toId parent)
+  const childrenMap = new Map();
+  for (const node of state.nodes.values()) childrenMap.set(node.id, []);
+  const hasParent = new Set();
+  for (const e of state.edges) {
+    hasParent.add(e.fromId);
+    const arr = childrenMap.get(e.toId) || [];
+    arr.push(e.fromId);
+    childrenMap.set(e.toId, arr);
   }
 
-  // Row 2: agents under each manager, stacked horizontally beneath their manager
-  const byManager = new Map();
-  for (const edge of state.edges) {
-    // agents have edge to their manager (toId)
-    if (state.nodes.get(edge.fromId)?.level === 2) {
-      const list = byManager.get(edge.toId) || [];
-      list.push(state.nodes.get(edge.fromId));
-      byManager.set(edge.toId, list);
+  // Root: prefer CEO, otherwise find a node without parent
+  let rootId = 'chief-executive-officer';
+  if (!state.nodes.has(rootId)) {
+    rootId = [...state.nodes.keys()].find(id => !hasParent.has(id)) || [...state.nodes.keys()][0];
+  }
+
+  // Sort children for stable layout
+  for (const [pid, list] of childrenMap) {
+    list.sort((a, b) => {
+      const na = state.nodes.get(a);
+      const nb = state.nodes.get(b);
+      // managers/agents grouping by level then name
+      const la = na?.level ?? 99;
+      const lb = nb?.level ?? 99;
+      if (la !== lb) return la - lb;
+      return (na?.name || '').localeCompare(nb?.name || '');
+    });
+  }
+
+  // First pass: compute subtree widths
+  const widths = new Map();
+  function computeWidth(id) {
+    const children = childrenMap.get(id) || [];
+    if (children.length === 0) {
+      widths.set(id, CARD_WIDTH);
+      return CARD_WIDTH;
+    }
+    let sum = 0;
+    for (const c of children) sum += computeWidth(c);
+    const total = sum + GAP_X * (children.length - 1);
+    const w = Math.max(CARD_WIDTH, total);
+    widths.set(id, w);
+    return w;
+  }
+  computeWidth(rootId);
+
+  // Second pass: assign positions top-down, left-to-right
+  const leftMargin = 40;
+  const topMargin = 40;
+  function place(id, x, depth) {
+    const w = widths.get(id) || CARD_WIDTH;
+    const node = state.nodes.get(id);
+    if (!node) return;
+    node.x = x + w / 2 - CARD_WIDTH / 2;
+    node.y = topMargin + depth * (CARD_HEIGHT + GAP_Y);
+    let childX = x;
+    const children = childrenMap.get(id) || [];
+    for (const c of children) {
+      const cw = widths.get(c) || CARD_WIDTH;
+      place(c, childX, depth + 1);
+      childX += cw + GAP_X;
     }
   }
+  place(rootId, leftMargin, 0);
+}
 
-  for (const [managerId, agents] of byManager.entries()) {
-    const manager = state.nodes.get(managerId);
-    agents.sort((a, b) => a.name.localeCompare(b.name));
-    const totalWidth = agents.length * CARD_WIDTH + (agents.length - 1) * GAP_X;
-    let startX = manager.x + CARD_WIDTH / 2 - totalWidth / 2;
-    const y = manager.y + CARD_HEIGHT + GAP_Y;
-    for (const a of agents) {
-      a.x = startX;
-      a.y = y;
-      startX += CARD_WIDTH + GAP_X;
-    }
+function resizeCanvasToContent() {
+  // Compute bounds and size layers accordingly to avoid clipping in full-screen
+  const nodes = [...state.nodes.values()];
+  if (nodes.length === 0) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of nodes) {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + CARD_WIDTH);
+    maxY = Math.max(maxY, n.y + CARD_HEIGHT);
   }
+  const padding = 120;
+  const width = Math.max(1200, Math.ceil(maxX - minX + padding));
+  const height = Math.max(800, Math.ceil(maxY - minY + padding));
+  const svg = document.getElementById('connections');
+  const layer = document.getElementById('cards-layer');
+  svg.style.width = `${width}px`;
+  svg.style.height = `${height}px`;
+  layer.style.width = `${width}px`;
+  layer.style.height = `${height}px`;
 }
 
 function getAgentsForManager(managerId) {
@@ -192,6 +238,7 @@ function render() {
     svg.appendChild(path);
   }
 
+  resizeCanvasToContent();
   applyStageTransform();
 }
 
@@ -455,6 +502,8 @@ function formatDepartment(name) {
 function wireZoomControls() {
   document.getElementById('btn-full-view').onclick = zoomToFit;
   document.getElementById('btn-focus-view').onclick = zoomToFocus;
+  const btnReorg = document.getElementById('btn-reorganize');
+  if (btnReorg) btnReorg.onclick = () => { autoLayout(); render(); zoomToFit(); };
 }
 
 function wireStagePanZoom() {
