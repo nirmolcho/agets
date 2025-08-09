@@ -109,6 +109,48 @@
       "hover": {
         "color": "#FFFFFF"
       }
+    },
+    "sidePanel": {
+      "background": "#1A1A1A",
+      "borderLeft": "1px solid #333333",
+      "width": "400px",
+      "maxWidth": "45%",
+      "minWidth": "300px",
+      "color": "#FFFFFF",
+      "padding": "20px",
+      "overflowY": "auto",
+      "shadow": "0 0 20px rgba(0,0,0,0.5)",
+      "header": {
+        "fontSize": "18px",
+        "fontWeight": "700",
+        "marginBottom": "15px",
+        "color": "#FFFFFF",
+        "borderBottom": "1px solid #333333",
+        "paddingBottom": "10px"
+      },
+      "sectionTitle": {
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "color": "#CCCCCC",
+        "marginTop": "20px",
+        "marginBottom": "8px"
+      },
+      "taskItem": {
+        "background": "#0F0F0F",
+        "border": "1px solid #333333",
+        "borderRadius": "8px",
+        "padding": "10px",
+        "marginBottom": "10px",
+        "color": "#FFFFFF"
+      },
+      "scrollbar": {
+        "width": "8px",
+        "background": "#1A1A1A",
+        "thumb": {
+          "background": "#333333",
+          "borderRadius": "4px"
+        }
+      }
     }
   },
   "rules": {
@@ -122,7 +164,8 @@
       "Apply gradients only to department tags",
       "Implement hover effects on interactive elements",
       "Use consistent spacing and typography",
-      "Include visual feedback for all interactions"
+      "Include visual feedback for all interactions",
+      "Side panel should feel like GPT code view but match dark theme colors"
     ]
   }
 }
