@@ -20,6 +20,8 @@ const state = {
   focusedId: null,
   mode: 'org', // 'org' | 'departments'
   activeDepartment: null, // department key when viewing a specific department
+  savedPositions: new Map(), // id -> { x, y }
+  deptPositions: new Map(), // deptKey -> { x, y }
 };
 
 /**
@@ -35,6 +37,8 @@ async function init() {
   buildGraphFromOrganization(org);
   computeResponsiveLayoutParams();
   autoLayout();
+  loadSessionPositions();
+  applySavedPositions();
   render();
   zoomToFit();
 
@@ -169,20 +173,38 @@ function autoLayout() {
 
 function resizeCanvasToContent() {
   // Compute bounds and size layers accordingly to avoid clipping in full-screen
-  const nodes = [...state.nodes.values()];
-  if (nodes.length === 0) return;
+  const svg = document.getElementById('connections');
+  const layer = document.getElementById('cards-layer');
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const n of nodes) {
-    minX = Math.min(minX, n.x);
-    minY = Math.min(minY, n.y);
-    maxX = Math.max(maxX, n.x + CARD_WIDTH);
-    maxY = Math.max(maxY, n.y + CARD_HEIGHT);
+
+  if (state.mode === 'departments') {
+    // Measure department cards from DOM to capture manual positioning
+    const deptCards = layer.querySelectorAll('.dept-card');
+    if (!deptCards.length) return;
+    deptCards.forEach((el) => {
+      const x = el.offsetLeft;
+      const y = el.offsetTop;
+      const w = el.offsetWidth || CARD_WIDTH;
+      const h = el.offsetHeight || CARD_HEIGHT;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    });
+  } else {
+    const nodes = [...state.nodes.values()];
+    if (nodes.length === 0) return;
+    for (const n of nodes) {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + CARD_WIDTH);
+      maxY = Math.max(maxY, n.y + CARD_HEIGHT);
+    }
   }
+
   const padding = 120;
   const width = Math.max(1200, Math.ceil(maxX - minX + padding));
   const height = Math.max(800, Math.ceil(maxY - minY + padding));
-  const svg = document.getElementById('connections');
-  const layer = document.getElementById('cards-layer');
   svg.style.width = `${width}px`;
   svg.style.height = `${height}px`;
   layer.style.width = `${width}px`;
@@ -395,6 +417,9 @@ function enableDrag(el) {
   };
   const onUp = () => {
     window.removeEventListener('pointermove', onMove);
+    // Persist per-session manual position
+    const id = el.dataset.id;
+    if (id) saveAgentPosition(id);
     render();
   };
   el.addEventListener('pointerdown', onDown);
@@ -440,8 +465,8 @@ function wireToolbar() {
   btnImport.onclick = () => fileImport.click();
   fileImport.onchange = importConfiguration;
   btnAdd.onclick = addAgentFlow;
-  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); render(); zoomToFit(); };
-  if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); render(); zoomToFit(); };
+  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit(); };
+  if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
 }
 
 function exportConfiguration() {
@@ -766,8 +791,11 @@ function renderDepartmentsView(cardsLayer, svg, design) {
     const d = departments.get(key);
     const col = idx % cols;
     const row = Math.floor(idx / cols);
-    const x = 60 + col * (CARD_WIDTH + GAP_X);
-    const y = 60 + row * (CARD_HEIGHT + rowGap);
+    const defaultX = 60 + col * (CARD_WIDTH + GAP_X);
+    const defaultY = 60 + row * (CARD_HEIGHT + rowGap);
+    const saved = state.deptPositions.get(d.key);
+    const x = saved?.x ?? defaultX;
+    const y = saved?.y ?? defaultY;
     const card = createDepartmentCard(d, x, y, design);
     deptCards.push(card);
   });
@@ -861,6 +889,7 @@ function createDepartmentCard(dept, x, y, design) {
   controls.append(leftGroup, divider, rightGroup);
 
   el.append(header, summary, controls);
+  enableDeptDrag(el);
   return el;
 }
 
@@ -974,6 +1003,7 @@ function wireResizeHandlers() {
     rafId = requestAnimationFrame(() => {
       computeResponsiveLayoutParams();
       autoLayout();
+      applySavedPositions();
       render();
       zoomToFit();
     });
@@ -1004,10 +1034,10 @@ function computeResponsiveLayoutParams() {
   const depth = Math.max(1, ...(Array.from(levels.keys())) ) + 1; // levels start at 0
 
   // Base sizes
-  const baseCardW = 300;
-  const baseCardH = 160;
-  const baseGapX = 60;
-  const baseGapY = 140;
+  const baseCardW = 360;
+  const baseCardH = 220;
+  const baseGapX = 80;
+  const baseGapY = 180;
 
   // Approx required size using base values
   const approxWidth = maxBreadth * baseCardW + (maxBreadth - 1) * baseGapX + 240;
@@ -1018,12 +1048,99 @@ function computeResponsiveLayoutParams() {
   // Mildly adapt intrinsic sizes; also stage zoom will handle remaining scaling
   const s = clamp(Math.min(fitScaleX, fitScaleY), 0.7, 1.15);
 
-  CARD_WIDTH = clamp(Math.round(baseCardW * s), 180, 340);
-  CARD_HEIGHT = clamp(Math.round(baseCardH * s), 120, 220);
-  GAP_X = clamp(Math.round(baseGapX * s), 32, 100);
-  GAP_Y = clamp(Math.round(baseGapY * s), 80, 200);
+  CARD_WIDTH = clamp(Math.round(baseCardW * s), 240, 420);
+  CARD_HEIGHT = clamp(Math.round(baseCardH * s), 160, 280);
+  GAP_X = clamp(Math.round(baseGapX * s), 48, 120);
+  GAP_Y = clamp(Math.round(baseGapY * s), 100, 220);
 }
 
 init();
+
+// -------------------- Position Persistence --------------------
+const AGENT_POS_KEY = 'agent_positions_v1';
+const DEPT_POS_KEY = 'dept_positions_v1';
+
+function loadSessionPositions() {
+  try {
+    const agentJson = sessionStorage.getItem(AGENT_POS_KEY);
+    if (agentJson) {
+      const obj = JSON.parse(agentJson);
+      for (const [id, pos] of Object.entries(obj)) {
+        if (typeof pos?.x === 'number' && typeof pos?.y === 'number') {
+          state.savedPositions.set(id, { x: pos.x, y: pos.y });
+        }
+      }
+    }
+  } catch {}
+  try {
+    const deptJson = sessionStorage.getItem(DEPT_POS_KEY);
+    if (deptJson) {
+      const obj = JSON.parse(deptJson);
+      for (const [key, pos] of Object.entries(obj)) {
+        if (typeof pos?.x === 'number' && typeof pos?.y === 'number') {
+          state.deptPositions.set(key, { x: pos.x, y: pos.y });
+        }
+      }
+    }
+  } catch {}
+}
+
+function saveAgentPosition(id) {
+  const node = state.nodes.get(id);
+  if (!node) return;
+  state.savedPositions.set(id, { x: node.x, y: node.y });
+  const obj = {};
+  for (const [nid, pos] of state.savedPositions.entries()) obj[nid] = pos;
+  try { sessionStorage.setItem(AGENT_POS_KEY, JSON.stringify(obj)); } catch {}
+}
+
+function saveDeptPosition(deptKey, x, y) {
+  state.deptPositions.set(deptKey, { x, y });
+  const obj = {};
+  for (const [k, pos] of state.deptPositions.entries()) obj[k] = pos;
+  try { sessionStorage.setItem(DEPT_POS_KEY, JSON.stringify(obj)); } catch {}
+}
+
+function applySavedPositions() {
+  for (const [id, pos] of state.savedPositions.entries()) {
+    const node = state.nodes.get(id);
+    if (!node) continue;
+    node.x = pos.x;
+    node.y = pos.y;
+  }
+}
+
+function enableDeptDrag(el) {
+  let startX = 0, startY = 0, origX = 0, origY = 0;
+  const onDown = (e) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    const styleLeft = parseFloat(el.style.left || '0');
+    const styleTop = parseFloat(el.style.top || '0');
+    origX = styleLeft;
+    origY = styleTop;
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  };
+  const onMove = (e) => {
+    const dx = (e.clientX - startX) / state.zoom.scale;
+    const dy = (e.clientY - startY) / state.zoom.scale;
+    const x = origX + dx;
+    const y = origY + dy;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+  };
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove);
+    const deptKey = el.dataset.dept;
+    const x = parseFloat(el.style.left || '0');
+    const y = parseFloat(el.style.top || '0');
+    if (deptKey) saveDeptPosition(deptKey, x, y);
+    // Redraw to ensure canvas bounds adjust if needed
+    render();
+  };
+  el.addEventListener('pointerdown', onDown);
+}
 
 
