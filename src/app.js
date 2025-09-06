@@ -52,34 +52,21 @@ try {
     computeResponsiveLayoutParams(); autoLayout(); render();
   };
   // @ts-ignore
-  window.__forceDeptView = () => { state.mode = 'departments'; render(); };
+  window.__forceDeptView = () => {
+    state.mode = 'departments';
+    try {
+      if (state.nodes.size === 0) {
+        const setup = loadSetupSelections() || { departments: [], scope: 'all', layout: 'departments' };
+        buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), setup);
+        computeResponsiveLayoutParams();
+      }
+    } catch {}
+    render();
+  };
 } catch {}
 
-// Onboarding overlay policy: hidden by default; allow opt-in via URL param
-try {
-  const params = new URLSearchParams(location.search);
-  const show = (() => {
-    try {
-      const p = params.get('showOnboarding');
-      return p === '1' || p === 'true';
-    } catch { return false; }
-  })();
-  const overlay = document.getElementById('welcome-overlay');
-  const container = document.getElementById('canvas-container');
-  const stage = document.getElementById('stage');
-  if (overlay && !show) {
-    overlay.classList.add('hidden');
-    overlay.setAttribute('aria-hidden', 'true');
-    container?.classList.remove('hidden-in-onboarding');
-    stage?.classList.remove('hidden-in-onboarding');
-  }
-  if (overlay && show) {
-    overlay.classList.remove('hidden');
-    overlay.setAttribute('aria-hidden', 'false');
-    container?.classList.add('hidden-in-onboarding');
-    stage?.classList.add('hidden-in-onboarding');
-  }
-} catch {}
+// Onboarding overlay will be managed by init() based on persisted setup
+// No need for URL parameter control
 
 /**
  * @typedef {{
@@ -94,16 +81,30 @@ try {
  * }} Task
  */
 
+function getFallbackOrg() {
+  return {
+    organization: {
+      ceo: { role: 'chief-executive-officer', name: 'CEO', department: 'executive', level: 0, reportsTo: null, manages: ['engineering-manager'] },
+      departments: [
+        {
+          name: 'engineering',
+          manager: { role: 'engineering-manager', name: 'Engineering Director', level: 1, reportsTo: 'chief-executive-officer' },
+          agents: [
+            { role: 'frontend-developer', name: 'Frontend Developer', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
+            { role: 'backend-architect', name: 'Backend Architect', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
+          ],
+        },
+      ],
+    },
+  };
+}
+
 async function init() {
-  // Pre-compute onboarding state and reveal overlay ASAP (before async loads)
-  let persisted = loadSetupSelections();
-  if (!persisted) {
-    // Default to full org view with all departments and agents so users can start immediately
-    persisted = { departments: [], scope: 'all', layout: 'org' };
-    try { saveSetupSelections(persisted); } catch {}
-  }
+
+  // Pre-compute onboarding state and reveal overlay if not configured yet
+  const persisted = loadSetupSelections();
   if (persisted) {
-    // Persisted setup exists: immediately reveal canvas and render fallback org before any awaits
+    // Persisted setup exists: show the canvas, we'll render after org data loads
     try {
       const overlay = document.getElementById('welcome-overlay');
       const container = document.getElementById('canvas-container');
@@ -111,11 +112,17 @@ async function init() {
       if (overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
       if (container) container.classList.remove('hidden-in-onboarding');
       if (stage) stage.classList.remove('hidden-in-onboarding');
-      state.nodes.clear(); state.edges = []; state.testingEdges = [];
-      buildGraphFromOrganization(getFallbackOrg(), persisted);
-      computeResponsiveLayoutParams();
-      autoLayout();
-      render();
+      // Don't render yet - wait for actual org data to load
+    } catch {}
+  } else {
+    // Hide canvas until setup is completed
+    try {
+      const overlay = document.getElementById('welcome-overlay');
+      const container = document.getElementById('canvas-container');
+      const stage = document.getElementById('stage');
+      if (overlay) { overlay.classList.remove('hidden'); overlay.setAttribute('aria-hidden', 'false'); }
+      if (container) container.classList.add('hidden-in-onboarding');
+      if (stage) stage.classList.add('hidden-in-onboarding');
     } catch {}
   }
   await loadTheme();
@@ -151,9 +158,8 @@ async function init() {
   // Reveal the app only after auth/theme checks complete
   try { document.getElementById('app-root').style.visibility = 'visible'; } catch {}
 
-  // Apply welcome setup using previously computed persisted selections
+  // Apply welcome setup using previously computed persisted selections (if any)
   if (persisted) {
-    // Ensure overlay is hidden and canvas visible when setup already exists
     try {
       const overlay = document.getElementById('welcome-overlay');
       const container = document.getElementById('canvas-container');
@@ -162,34 +168,6 @@ async function init() {
       if (container) container.classList.remove('hidden-in-onboarding');
       if (stage) stage.classList.remove('hidden-in-onboarding');
     } catch {}
-    // Optimistic render with fallback org while real org loads
-    try {
-      state.nodes.clear(); state.edges = []; state.testingEdges = [];
-      buildGraphFromOrganization(getFallbackOrg(), persisted);
-      computeResponsiveLayoutParams();
-      autoLayout();
-      render();
-    } catch {}
-  }
-
-  // No onboarding modal by default
-
-  function getFallbackOrg() {
-    return {
-      organization: {
-        ceo: { role: 'chief-executive-officer', name: 'CEO', department: 'executive', level: 0, reportsTo: null, manages: ['engineering-manager'] },
-        departments: [
-          {
-            name: 'engineering',
-            manager: { role: 'engineering-manager', name: 'Engineering Director', level: 1, reportsTo: 'chief-executive-officer' },
-            agents: [
-              { role: 'frontend-developer', name: 'Frontend Developer', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
-              { role: 'backend-architect', name: 'Backend Architect', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
-            ],
-          },
-        ],
-      },
-    };
   }
 
   let org = null;
@@ -204,11 +182,20 @@ async function init() {
   }
   ORG_DATA = org;
 
-  if (!persisted) {
-    // (won't happen because we persist defaults above)
-  } else {
+  if (persisted) {
     buildGraphFromOrganization(org, persisted);
+    computeResponsiveLayoutParams();
+    autoLayout();
+    loadSessionPositions();
+    applySavedPositions();
+    render();
+    zoomToFit();
+  } else {
+    // Show onboarding overlay with dynamic generation controls
+    showWelcomeOverlay(org);
+    // Don't render anything yet - wait for user to complete setup
   }
+  
   // If setup was completed before org finished loading, apply it now
   if (PENDING_SETUP) {
     try {
@@ -222,13 +209,13 @@ async function init() {
     state.nodes.clear(); state.edges = []; state.testingEdges = [];
     buildGraphFromOrganization(ORG_DATA, PENDING_SETUP);
     PENDING_SETUP = null;
+    computeResponsiveLayoutParams();
+    autoLayout();
+    loadSessionPositions();
+    applySavedPositions();
+    render();
+    zoomToFit();
   }
-  computeResponsiveLayoutParams();
-  autoLayout();
-  loadSessionPositions();
-  applySavedPositions();
-  render();
-  zoomToFit();
 
   wireToolbar();
   wireZoomControls();
@@ -262,7 +249,17 @@ async function init() {
       computeResponsiveLayoutParams(); autoLayout(); render();
     };
     // @ts-ignore
-    window.__forceDeptView = () => { state.mode = 'departments'; render(); };
+    window.__forceDeptView = () => {
+      state.mode = 'departments';
+      try {
+        if (state.nodes.size === 0) {
+          const setup = loadSetupSelections() || { departments: [], scope: 'all', layout: 'departments' };
+          buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), setup);
+          computeResponsiveLayoutParams();
+        }
+      } catch {}
+      render();
+    };
   } catch {}
 }
 
@@ -286,7 +283,8 @@ function buildGraphFromOrganization(org, setup) {
   const selectedDepts = new Set((setup?.departments || []).map(toDepartmentKey));
   const scopeManagersOnly = setup?.scope === 'managers';
   for (const dept of org.organization.departments) {
-    if (setup && selectedDepts.size && !selectedDepts.has(toDepartmentKey(dept.name))) continue;
+    // If departments array is not empty, filter by selected departments
+    if (setup && selectedDepts.size > 0 && !selectedDepts.has(toDepartmentKey(dept.name))) continue;
     const manager = dept.manager;
     const managerId = manager.role;
     state.nodes.set(managerId, {
@@ -324,6 +322,38 @@ function buildGraphFromOrganization(org, setup) {
   }
 }
 
+// Utility: generate a random organization structure with N departments and M agents per department
+function generateRandomOrg(numDepartments, agentsPerDept) {
+  const safeDepts = Math.max(1, Math.min(20, Number(numDepartments) || 1));
+  const safeAgents = Math.max(0, Math.min(20, Number(agentsPerDept) || 0));
+  const departments = [];
+  for (let i = 1; i <= safeDepts; i++) {
+    const key = `department-${i}`;
+    const managerRole = `${key}-manager`;
+    const agents = [];
+    for (let j = 1; j <= safeAgents; j++) {
+      agents.push({
+        role: `${key}-agent-${j}`,
+        name: `Agent ${j}`,
+        level: 2,
+        reportsTo: managerRole,
+        testingConnections: [],
+      });
+    }
+    departments.push({
+      name: key,
+      manager: { role: managerRole, name: `${formatDepartment(key)} Director`, level: 1, reportsTo: 'chief-executive-officer' },
+      agents,
+    });
+  }
+  return {
+    organization: {
+      ceo: { role: 'chief-executive-officer', name: 'CEO', department: 'executive', level: 0, reportsTo: null, manages: departments.map(d => `${toDepartmentKey(d.name)}-manager`) },
+      departments,
+    },
+  };
+}
+
 // -------------------- Welcome Overlay (Guided Setup) --------------------
 const SETUP_KEY = 'aos_setup_v1';
 
@@ -352,17 +382,34 @@ function showWelcomeOverlay(org) {
 
   let step = 1;
   const selections = { departments: [], scope: 'managers', layout: 'org' };
-
-  const depts = ((org && org.organization && org.organization.departments) ? org.organization.departments : []).map(d => ({ key: toDepartmentKey(d.name), name: formatDepartment(d.name) }));
+  let orgRef = org || ORG_DATA || getFallbackOrg();
 
   function renderStep() {
     modal.innerHTML = '';
     if (step === 1) {
       const header = document.createElement('div');
       header.className = 'welcome-header';
-      header.innerHTML = `<div id="welcome-title" class="welcome-title">Which departments do you want to include?</div><div class="welcome-sub">Pick the teams you want to start with. You can change this later.</div>`;
+      header.innerHTML = `<div id="welcome-title" class="welcome-title">Setup your org</div><div class="welcome-sub">Generate departments/agents, or pick from existing data below.</div>`;
+      const gen = document.createElement('div');
+      gen.className = 'welcome-generator';
+      gen.innerHTML = `
+        <div class="row"><label for="gen-depts">Number of departments</label><input id="gen-depts" type="number" min="1" max="20" value="4" /></div>
+        <div class="row"><label for="gen-agents">Agents per department</label><input id="gen-agents" type="number" min="0" max="20" value="3" /></div>
+        <div class="welcome-actions"><div></div><div class="right"><button id="btn-generate-org" class="btn btn-primary">Generate</button></div></div>
+      `;
+      gen.querySelector('#btn-generate-org').onclick = () => {
+        const d = parseInt(gen.querySelector('#gen-depts').value, 10) || 1;
+        const a = parseInt(gen.querySelector('#gen-agents').value, 10) || 0;
+        const generated = generateRandomOrg(d, a);
+        ORG_DATA = generated;
+        orgRef = generated;
+        selections.departments = [];
+        renderStep();
+      };
       const grid = document.createElement('div');
       grid.className = 'welcome-grid';
+      const list = ((orgRef && orgRef.organization && orgRef.organization.departments) ? orgRef.organization.departments : []);
+      const depts = list.map(d => ({ key: toDepartmentKey(d.name), name: formatDepartment(d.name) }));
       for (const d of depts) {
         const tile = document.createElement('div');
         tile.className = 'welcome-tile';
@@ -402,7 +449,7 @@ function showWelcomeOverlay(org) {
       btnNext.onclick = () => { step = 2; renderStep(); };
       right.appendChild(btnNext);
       actions.append(left, right);
-      modal.append(header, grid, actions);
+      modal.append(header, gen, grid, actions);
     } else if (step === 2) {
       const header = document.createElement('div');
       header.className = 'welcome-header';
@@ -937,27 +984,30 @@ function wireToolbar() {
     state.mode = 'departments';
     state.activeDepartment = null;
     if (state.nodes.size === 0) {
-      const setup = loadSetupSelections() || { departments: [], scope: 'all', layout: 'org' };
+      const setup = loadSetupSelections() || { departments: [], scope: 'all', layout: 'departments' };
       buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), setup);
+      computeResponsiveLayoutParams();
     }
-    computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit();
+    applySavedPositions(); render(); zoomToFit();
   };
   if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
   if (btnResetSetup) btnResetSetup.onclick = () => {
     try { localStorage.removeItem(SETUP_KEY); } catch {}
-    // Clear current graph and show onboarding again
+    // Clear current graph and restore with default setup
     state.nodes.clear(); state.edges = []; state.testingEdges = [];
-    render();
     const container = document.getElementById('canvas-container');
     const stage = document.getElementById('stage');
-    container.classList.add('hidden-in-onboarding');
-    stage.classList.add('hidden-in-onboarding');
-    // Instead of overlay, immediately restore defaults
+    container.classList.remove('hidden-in-onboarding');
+    stage.classList.remove('hidden-in-onboarding');
+    // Use a default setup that shows all departments
     const defaults = { departments: [], scope: 'all', layout: 'org' };
     saveSetupSelections(defaults);
-    state.nodes.clear(); state.edges = []; state.testingEdges = [];
+    // Build graph with all departments (empty array means show all)
     buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), defaults);
-    computeResponsiveLayoutParams(); autoLayout(); render(); zoomToFit();
+    computeResponsiveLayoutParams(); 
+    autoLayout(); 
+    render(); 
+    zoomToFit();
   };
 }
 
@@ -997,7 +1047,7 @@ function importConfiguration(e) {
   e.target.value = '';
 }
 
-function addAgentFlow() {
+async function addAgentFlow() {
   const department = prompt('Enter department (e.g., engineering, marketing, design, testing, finance, sales, customer-success, security, studio-operations, human-resources):');
   if (!department) return;
   const name = prompt('Agent display name:');
@@ -1529,7 +1579,7 @@ function hideTooltip() {
 
 // -------------------- Department Agent Management --------------------
 // Simple flows using prompts for now with department preselection possible later
-export function addAgentToDepartment(department) {
+function addAgentToDepartment(department) {
   const name = prompt('Agent display name:');
   if (!name) return;
   const role = prompt('Unique role identifier (kebab-case):');
@@ -1542,7 +1592,7 @@ export function addAgentToDepartment(department) {
   render();
 }
 
-export function removeAgent(agentId) {
+function removeAgent(agentId) {
   if (!state.nodes.has(agentId)) return;
   state.nodes.delete(agentId);
   state.edges = state.edges.filter(e => e.fromId !== agentId && e.toId !== agentId);

@@ -25,6 +25,7 @@ test.describe('Interactive Elements - Dynamic Scan', () => {
     await page.getByRole('button', { name: 'Org View' }).click();
     await page.getByRole('button', { name: 'Departments View' }).click();
     try {
+      await page.waitForSelector('.dept-card', { timeout: 5000 });
       await expect(page.locator('.dept-card').first()).toBeVisible({ timeout: 1500 });
     } catch {
       // Fallback if early click landed before nodes were present
@@ -33,6 +34,7 @@ test.describe('Interactive Elements - Dynamic Scan', () => {
         if (typeof w.__forceRenderDemo === 'function') w.__forceRenderDemo();
         if (typeof w.__forceDeptView === 'function') w.__forceDeptView();
       });
+      await page.waitForSelector('.dept-card', { timeout: 5000 });
       await expect(page.locator('.dept-card').first()).toBeVisible({ timeout: 2000 });
     }
     await page.getByRole('button', { name: 'Org View' }).click();
