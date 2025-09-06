@@ -810,7 +810,7 @@ function createAgentCard(node, design) {
     const btnAddDeptAgent = document.createElement('button');
     btnAddDeptAgent.className = 'control-btn';
     btnAddDeptAgent.textContent = 'Add Agent to Dept';
-    btnAddDeptAgent.onclick = () => addAgentToDepartment(node.department);
+    btnAddDeptAgent.onclick = () => openAddAgentModal();
     managerControls.appendChild(btnAddDeptAgent);
 
     const agents = getAgentsForManager(node.id);
@@ -933,7 +933,15 @@ function wireToolbar() {
 
   btnExport.onclick = exportConfiguration;
   btnAdd.onclick = openAddAgentModal;
-  if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit(); };
+  if (btnDeptView) btnDeptView.onclick = () => {
+    state.mode = 'departments';
+    state.activeDepartment = null;
+    if (state.nodes.size === 0) {
+      const setup = loadSetupSelections() || { departments: [], scope: 'all', layout: 'org' };
+      buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), setup);
+    }
+    computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit();
+  };
   if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
   if (btnResetSetup) btnResetSetup.onclick = () => {
     try { localStorage.removeItem(SETUP_KEY); } catch {}
@@ -1644,7 +1652,7 @@ function createDepartmentCard(dept, x, y, design) {
   btnAddAgent.className = 'control-btn';
   btnAddAgent.textContent = 'Add Agent';
   btnAddAgent.setAttribute('aria-label', `Add agent to ${formatDepartment(dept.name)} department`);
-  btnAddAgent.onclick = () => addAgentToDepartment(dept.name);
+  btnAddAgent.onclick = () => openAddAgentModal();
   // Optional: keep Add Department here as a secondary control
   const btnAddDept = document.createElement('button');
   btnAddDept.className = 'control-btn';
