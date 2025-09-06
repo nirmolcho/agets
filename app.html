@@ -52,6 +52,17 @@
           <!-- Content injected by app.js -->
         </div>
       </div>
+      <!-- Generic action modal host -->
+      <div id="action-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <h3 id="modal-title">Action</h3>
+          <div id="modal-body" class="form"></div>
+          <div class="actions">
+            <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+            <button id="modal-confirm" class="btn btn-primary">Confirm</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/app.js"></script>

@@ -488,3 +488,31 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
+/* Generic action modal (for forms like Add Agent/Department) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  width: min(520px, 94vw);
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.modal h3 { margin: 0 0 6px; }
+.modal .form { display: grid; gap: 10px; }
+.modal .row { display: grid; gap: 6px; }
+.modal input, .modal select { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px; }
+.modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
+

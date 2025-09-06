@@ -98,8 +98,8 @@ async function init() {
   // Pre-compute onboarding state and reveal overlay ASAP (before async loads)
   let persisted = loadSetupSelections();
   if (!persisted) {
-    // Auto-bypass onboarding with defaults (also handles fresh sessions after OAuth redirects)
-    persisted = { departments: [], scope: 'managers', layout: 'org' };
+    // Default to full org view with all departments and agents so users can start immediately
+    persisted = { departments: [], scope: 'all', layout: 'org' };
     try { saveSetupSelections(persisted); } catch {}
   }
   if (persisted) {
@@ -172,18 +172,7 @@ async function init() {
     } catch {}
   }
 
-  // If onboarding, reveal overlay immediately before loading org to satisfy UI expectations
-  if (!persisted) {
-    const container = document.getElementById('canvas-container');
-    const stage = document.getElementById('stage');
-    container.classList.add('hidden-in-onboarding');
-    stage.classList.add('hidden-in-onboarding');
-    try {
-      const overlay = document.getElementById('welcome-overlay');
-      overlay.classList.remove('hidden');
-      overlay.setAttribute('aria-hidden', 'false');
-    } catch {}
-  }
+  // No onboarding modal by default
 
   function getFallbackOrg() {
     return {
@@ -216,8 +205,7 @@ async function init() {
   ORG_DATA = org;
 
   if (!persisted) {
-    // Populate overlay content with org data now that it's loaded
-    showWelcomeOverlay(org);
+    // (won't happen because we persist defaults above)
   } else {
     buildGraphFromOrganization(org, persisted);
   }
@@ -944,7 +932,7 @@ function wireToolbar() {
   const btnResetSetup = document.getElementById('btn-reset-setup');
 
   btnExport.onclick = exportConfiguration;
-  btnAdd.onclick = addAgentFlow;
+  btnAdd.onclick = openAddAgentModal;
   if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit(); };
   if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
   if (btnResetSetup) btnResetSetup.onclick = () => {
@@ -956,7 +944,12 @@ function wireToolbar() {
     const stage = document.getElementById('stage');
     container.classList.add('hidden-in-onboarding');
     stage.classList.add('hidden-in-onboarding');
-    showWelcomeOverlay(ORG_DATA);
+    // Instead of overlay, immediately restore defaults
+    const defaults = { departments: [], scope: 'all', layout: 'org' };
+    saveSetupSelections(defaults);
+    state.nodes.clear(); state.edges = []; state.testingEdges = [];
+    buildGraphFromOrganization(ORG_DATA || getFallbackOrg(), defaults);
+    computeResponsiveLayoutParams(); autoLayout(); render(); zoomToFit();
   };
 }
 
@@ -1017,6 +1010,50 @@ function addAgentFlow() {
   const newId = id;
   try { const uid = (await getSession()).data?.session?.user?.id; if (uid) await saveUserData(uid, { action: 'add_agent', agentId: newId, department }); } catch {}
   render();
+}
+
+// ---------- Modal Utilities ----------
+function openModal({ title, bodyHtml, onConfirm }) {
+  const host = document.getElementById('action-modal');
+  const titleEl = host.querySelector('#modal-title');
+  const body = host.querySelector('#modal-body');
+  const btnCancel = host.querySelector('#modal-cancel');
+  const btnConfirm = host.querySelector('#modal-confirm');
+  titleEl.textContent = title || 'Action';
+  body.innerHTML = bodyHtml || '';
+  host.classList.add('open');
+  host.setAttribute('aria-hidden', 'false');
+  btnCancel.onclick = () => { host.classList.remove('open'); host.setAttribute('aria-hidden', 'true'); };
+  btnConfirm.onclick = () => { try { onConfirm?.(host); } finally { host.classList.remove('open'); host.setAttribute('aria-hidden', 'true'); } };
+}
+
+function openAddAgentModal() {
+  // Build department options from managers
+  const managers = [...state.nodes.values()].filter(n => n.level === 1);
+  const deptOptions = managers.map(m => `<option value="${m.department}">${formatDepartment(m.department)}</option>`).join('');
+  const body = `
+    <div class="row"><label>Department</label><select id="modal-dept">${deptOptions}</select></div>
+    <div class="row"><label>Agent name</label><input id="modal-name" placeholder="e.g., Senior Engineer" /></div>
+    <div class="row"><label>Role id (kebab-case)</label><input id="modal-role" placeholder="e.g., senior-engineer" /></div>
+  `;
+  openModal({
+    title: 'Add Agent',
+    bodyHtml: body,
+    onConfirm: () => {
+      const host = document.getElementById('action-modal');
+      const department = host.querySelector('#modal-dept').value;
+      const name = (host.querySelector('#modal-name').value || '').trim();
+      const role = (host.querySelector('#modal-role').value || '').trim();
+      if (!department || !name || !role) return;
+      // Existing add agent logic
+      const manager = [...state.nodes.values()].find(n => n.level === 1 && toDepartmentKey(n.department) === toDepartmentKey(department));
+      if (!manager) { alert('No manager found for that department'); return; }
+      if (state.nodes.has(role)) { alert('Role already exists'); return; }
+      state.nodes.set(role, { id: role, name, role, department, level: 2, x: manager.x, y: manager.y + CARD_HEIGHT + GAP_Y, status: 'idle', tasks: [] });
+      state.edges.push({ fromId: role, toId: manager.id });
+      render();
+    }
+  });
 }
 
 function startStatusTicker() {
