@@ -104,6 +104,57 @@ npm run build
 npm run preview # serves dist on port 3000
 ```
 
+## Example: How it looks now
+
+A compact sketch of the current org and a single agent card.
+
+Org overview (simplified):
+
+```
+CEO (chief-executive-officer)
+├─ Studio Operations ─ Operations Director
+│  ├─ Infrastructure Maintainer   ── ░ testing: Workflow Optimizer, Performance Benchmarker
+│  ├─ Finance Tracker             ── ░ testing: Tool Evaluator, Test Results Analyzer
+│  └─ Support Responder          ── ░ testing: API Tester, Workflow Optimizer
+├─ Design ─ Design Director
+│  ├─ Visual Storyteller         ── ░ testing: Tool Evaluator, Workflow Optimizer
+│  ├─ UX Researcher              ── ░ testing: Test Results Analyzer, Workflow Optimizer
+│  └─ UI Designer                ── ░ testing: API Tester, Workflow Optimizer
+├─ Project Management ─ PMO Director
+│  └─ Project Shipper            ── ░ testing: Workflow Optimizer, Performance Benchmarker
+├─ Product ─ Product Director
+│  └─ Sprint Prioritizer         ── ░ testing: Workflow Optimizer, Test Results Analyzer
+├─ Testing ─ Testing Director
+│  ├─ Tool Evaluator
+│  ├─ API Tester
+│  ├─ Performance Benchmarker
+│  ├─ Test Results Analyzer
+│  └─ Workflow Optimizer
+├─ Marketing ─ Marketing Director
+│  └─ Content Creator            ── ░ testing: Performance Benchmarker, Test Results Analyzer
+└─ Engineering ─ Engineering Director
+   ├─ Frontend Developer         ── ░ testing: API Tester, Performance Benchmarker
+   └─ AI Engineer                ── ░ testing: Performance Benchmarker, Test Results Analyzer
+```
+
+Agent card (visual essence):
+
+```
+┌──────────────────────────────────────────┐
+│ CEO                                      ● status: idle
+│ chief-executive-officer                  │
+│                                          │
+│ [ Executive ]                            │  ← department tag (gradient, from design.json)
+│                                          │
+│ Actions:  Start   Stop   Error           │
+└──────────────────────────────────────────┘
+```
+
+Notes:
+- Solid curved lines show hierarchy; dashed lines show testing connections.
+- Department header click opens a slide-in overlay with agent tiles.
+- Clicking an agent opens the right-side detail panel with tasks and a time summary.
+
 ## FAQ
 
 - Where does data save?
