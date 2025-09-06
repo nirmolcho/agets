@@ -8,14 +8,50 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+function readEnv(name) {
+  try {
+    // Prefer Vite-style env vars
+    const viteVal = import.meta?.env?.[name];
+    if (viteVal) return viteVal;
+  } catch (_) {}
+  try {
+    // Fallback to NEXT_PUBLIC_* if injected at build time
+    const nextVal = import.meta?.env?.[`NEXT_PUBLIC_${name.replace(/^VITE_/, '')}`];
+    if (nextVal) return nextVal;
+  } catch (_) {}
+  try {
+    // Optional: allow window-scoped overrides (e.g., window.__ENV)
+    const win = typeof window !== 'undefined' ? window : undefined;
+    const winEnv = win?.__ENV ?? win?.ENV;
+    const key = name
+      .replace(/^VITE_/, '')
+      .replace(/^NEXT_PUBLIC_/, '')
+      .replace(/^SUPABASE_/, '');
+    const fromWindow = winEnv?.[`VITE_${key}`] || winEnv?.[`NEXT_PUBLIC_${key}`] || winEnv?.[key];
+    if (fromWindow) return fromWindow;
+  } catch (_) {}
+  return undefined;
+}
+
 let supabaseClient = null;
 
 export function getSupabase() {
   if (supabaseClient) return supabaseClient;
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  let url = readEnv('VITE_SUPABASE_URL');
+  let anonKey = readEnv('VITE_SUPABASE_ANON_KEY');
+
+  // Also accept NEXT_PUBLIC_* if present
+  url = url || readEnv('NEXT_PUBLIC_SUPABASE_URL');
+  anonKey = anonKey || readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+  // DEV-only safety fallback using provided anon key (never use service_role in browser)
+  if ((!url || !anonKey) && (import.meta?.env?.DEV ?? false)) {
+    url = url || 'https://bwkqyjfizhvrrylqjxng.supabase.co';
+    anonKey = anonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3F5amZpemh2cnJ5bHFqeG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNzQ1ODQsImV4cCI6MjA3Mjc1MDU4NH0.yHHslRbEfFtVScZGf5stehBsZvrMbD8223Gd0apNxBU';
+  }
+
   if (!url || !anonKey) {
-    console.warn('[auth] Missing Supabase env config. Auth features are disabled.');
+    console.warn('[auth] Missing Supabase env config. Expected VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or NEXT_PUBLIC_* fallbacks).');
     return null;
   }
   supabaseClient = createClient(url, anonKey, {
@@ -52,7 +88,7 @@ export async function signOut() {
 export async function signInWithGoogle() {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase not configured');
-  const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || `${location.origin}/`;
+  const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || `${location.origin}/login.html`;
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo, queryParams: { prompt: 'select_account' } },
