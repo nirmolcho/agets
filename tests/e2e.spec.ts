@@ -37,16 +37,11 @@ test.describe('Agent Orchestration Studio', () => {
     }
   }
 
-  test('first load shows empty canvas and welcome overlay', async ({ page }) => {
-    // Reset setup to simulate first load
+  test('first load shows toolbar and canvas (overlay disabled by default)', async ({ page }) => {
     await page.goto('/app.html');
-    await page.evaluate(() => sessionStorage.removeItem('aos_setup_v1'));
-    await page.reload();
-    // Only toolbar and welcome overlay visible; canvas content hidden
+    // Overlay should be hidden by default
+    await expect(page.locator('#welcome-overlay')).toHaveClass(/hidden/);
     await expect(page.locator('#toolbar')).toBeVisible();
-    await expect(page.locator('#welcome-overlay')).toBeVisible();
-    // Ensure cards and connections are not visible
-    await expect(page.locator('#cards-layer')).toBeHidden({ timeout: 1000 }).catch(() => {});
   });
 
   test('renders org view with toolbar and canvas', async ({ page }) => {
