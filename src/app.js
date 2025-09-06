@@ -97,74 +97,11 @@ async function init() {
   // Pre-compute onboarding state and reveal overlay ASAP (before async loads)
   let persisted = loadSetupSelections();
   if (!persisted) {
-    const params = new URLSearchParams(location.search);
-    const autostart = params.get('autostart');
-    if (autostart === '1' || autostart === 'true') {
-      persisted = { departments: [], scope: 'managers', layout: 'org' };
-    }
+    // Auto-bypass onboarding with defaults (also handles fresh sessions after OAuth redirects)
+    persisted = { departments: [], scope: 'managers', layout: 'org' };
+    try { saveSetupSelections(persisted); } catch {}
   }
-  if (!persisted) {
-    try {
-      const container = document.getElementById('canvas-container');
-      const stage = document.getElementById('stage');
-      const overlay = document.getElementById('welcome-overlay');
-      if (container) container.classList.add('hidden-in-onboarding');
-      if (stage) stage.classList.add('hidden-in-onboarding');
-      if (overlay) {
-        // Force visible immediately for first-load E2E expectations
-        overlay.className = 'welcome-overlay';
-        overlay.setAttribute('aria-hidden', 'false');
-      }
-      // Render initial overlay content immediately; will re-render once org data loads
-      try { showWelcomeOverlay(null); } catch {}
-      // Safety: if overlay is still visible shortly after load (e.g., blocked scripts or slow theme load),
-      // automatically bypass onboarding with sensible defaults so the app remains usable.
-      try {
-        setTimeout(() => {
-          try {
-            const ov = document.getElementById('welcome-overlay');
-            if (!ov) return;
-            const isHidden = ov.classList.contains('hidden') || ov.getAttribute('aria-hidden') === 'true';
-            if (isHidden) return;
-            {
-              const selections = { departments: [], scope: 'managers', layout: 'org' };
-              saveSetupSelections(selections);
-              // Hide overlay and render a minimal org view so user can interact immediately
-              ov.classList.add('hidden');
-              ov.setAttribute('aria-hidden', 'true');
-              const c = document.getElementById('canvas-container');
-              const st = document.getElementById('stage');
-              if (c) c.classList.remove('hidden-in-onboarding');
-              if (st) st.classList.remove('hidden-in-onboarding');
-              state.nodes.clear(); state.edges = []; state.testingEdges = [];
-              const orgForBypass = ORG_DATA || {
-                organization: {
-                  ceo: { role: 'chief-executive-officer', name: 'CEO', department: 'executive', level: 0, reportsTo: null, manages: ['engineering-manager'] },
-                  departments: [
-                    {
-                      name: 'engineering',
-                      manager: { role: 'engineering-manager', name: 'Engineering Director', level: 1, reportsTo: 'chief-executive-officer' },
-                      agents: [
-                        { role: 'frontend-developer', name: 'Frontend Developer', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
-                        { role: 'backend-architect', name: 'Backend Architect', level: 2, reportsTo: 'engineering-manager', testingConnections: [] },
-                      ],
-                    },
-                  ],
-                },
-              };
-              buildGraphFromOrganization(orgForBypass, selections);
-              computeResponsiveLayoutParams();
-              autoLayout();
-              render();
-              zoomToFit();
-              showHintBar();
-            }
-          } catch {}
-        }, 400);
-      } catch {}
-    } catch {}
-  }
-  else {
+  if (persisted) {
     // Persisted setup exists: immediately reveal canvas and render fallback org before any awaits
     try {
       const overlay = document.getElementById('welcome-overlay');
