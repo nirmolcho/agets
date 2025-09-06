@@ -44,6 +44,28 @@ const state = {
  */
 
 async function init() {
+  // Pre-compute onboarding state and reveal overlay ASAP (before async loads)
+  let persisted = loadSetupSelections();
+  if (!persisted) {
+    const params = new URLSearchParams(location.search);
+    const autostart = params.get('autostart');
+    if (autostart === '1' || autostart === 'true') {
+      persisted = { departments: [], scope: 'managers', layout: 'org' };
+    }
+  }
+  if (!persisted) {
+    try {
+      const container = document.getElementById('canvas-container');
+      const stage = document.getElementById('stage');
+      const overlay = document.getElementById('welcome-overlay');
+      if (container) container.classList.add('hidden-in-onboarding');
+      if (stage) stage.classList.add('hidden-in-onboarding');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+    } catch {}
+  }
   await loadTheme();
 
   // Auth gate: if required and not logged in, redirect to login
@@ -77,25 +99,27 @@ async function init() {
   // Reveal the app only after auth/theme checks complete
   try { document.getElementById('app-root').style.visibility = 'visible'; } catch {}
 
-  const orgRes = await fetch('/organization_tree.json');
-  const org = await orgRes.json();
-  ORG_DATA = org;
+  // Apply welcome setup using previously computed persisted selections
 
-  // Apply welcome setup or load persisted selections
-  let persisted = loadSetupSelections();
+  // If onboarding, reveal overlay immediately before loading org to satisfy UI expectations
   if (!persisted) {
-    const params = new URLSearchParams(location.search);
-    const autostart = params.get('autostart');
-    if (autostart === '1' || autostart === 'true') {
-      persisted = { departments: [], scope: 'managers', layout: 'org' };
-    }
-  }
-  if (!persisted) {
-    // True onboarding: hide canvas content and background grid until confirmed
     const container = document.getElementById('canvas-container');
     const stage = document.getElementById('stage');
     container.classList.add('hidden-in-onboarding');
     stage.classList.add('hidden-in-onboarding');
+    try {
+      const overlay = document.getElementById('welcome-overlay');
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+    } catch {}
+  }
+
+  const orgRes = await fetch('/organization_tree.json');
+  const org = await orgRes.json();
+  ORG_DATA = org;
+
+  if (!persisted) {
+    // Populate overlay content with org data now that it's loaded
     showWelcomeOverlay(org);
   } else {
     buildGraphFromOrganization(org, persisted);
