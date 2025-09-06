@@ -86,3 +86,35 @@ const DepartmentOverlay = ({ isOpen, department, onClose }) => {
 
 # Test Strategy:
 Test the overlay with various department sizes to ensure the grid layout adapts appropriately. Verify focus management when opening/closing the overlay. Test backdrop interaction to ensure it properly dims the background and responds to clicks.
+
+# Subtasks:
+## 1. Create Basic Overlay Structure with Backdrop [pending]
+### Dependencies: None
+### Description: Implement the foundational overlay component with proper positioning, backdrop, and z-index to ensure it appears above the main content.
+### Details:
+Create the DepartmentOverlay component with fixed positioning that covers the entire viewport. Implement the backdrop with semi-transparent background and blur effect. Ensure proper z-index values to maintain correct stacking context. Add the onClick handler to the backdrop for closing the overlay when clicking outside the content area.
+
+## 2. Implement Overlay Content Container with Header [pending]
+### Dependencies: 9.1
+### Description: Create the content container with proper styling, scrolling behavior, and header section with department name and close button.
+### Details:
+Implement the overlay content container with appropriate background color, border radius, and padding. Add max-width and max-height constraints with overflow handling for scrolling. Create the header section with the department name and close button. Style the header with proper spacing and alignment. Ensure the close button is clearly visible and accessible.
+
+## 3. Create Responsive Grid Layout for Department Items [pending]
+### Dependencies: 9.2
+### Description: Implement the responsive grid layout for department items using CSS Grid with appropriate spacing and alignment.
+### Details:
+Build the grid layout using CSS Grid with auto-fill and minmax to create a responsive tile layout. Configure appropriate gap values between grid items. Ensure the grid maintains proper alignment and spacing at various viewport sizes. Test with different numbers of items to verify the layout adapts correctly.
+
+## 4. Implement Simplified AgentCard Component for Overlay [pending]
+### Dependencies: 9.3
+### Description: Create or adapt the AgentCard component to work in simplified mode for the department overlay, maintaining consistent styling with the main view.
+### Details:
+Modify the existing AgentCard component to accept a 'simplified' prop that renders a more compact version suitable for the overlay grid. Ensure the simplified cards maintain the same visual language and styling as the main view cards. Remove unnecessary details while preserving essential information. Maintain consistent hover states and interactions.
+
+## 5. Add Smooth Transitions and Animation Effects [pending]
+### Dependencies: 9.1, 9.2, 9.3, 9.4
+### Description: Implement smooth transitions for opening and closing the overlay, including fade-in/out and scaling effects for improved user experience.
+### Details:
+Add CSS transitions for opacity and transform properties to create smooth fade and scale effects when opening and closing the overlay. Implement enter/exit animations using CSS keyframes or transition properties. Ensure transitions have appropriate timing (300-500ms) and easing functions for natural movement. Consider adding subtle animation to the grid items as they load for a polished effect.
+

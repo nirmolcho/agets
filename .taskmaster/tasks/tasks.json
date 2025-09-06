@@ -4,13 +4,81 @@
       {
         "id": 1,
         "title": "Establish Design System Foundation",
-        "description": "Create a comprehensive design system with tokens for colors, typography, spacing, and icons as specified in the PRD.",
-        "details": "Define and implement the following design tokens:\n- Colors: Create a palette for status states (active/idle/error), backgrounds, overlays, and department tags\n- Typography: Define hierarchy for titles, body text, and tags with appropriate weights (medium for department names, regular for agent roles)\n- Spacing: Standardize card padding, line height, and grid spacing\n- Icons: Design or select a consistent icon set for status indicators and departments\n\nEnsure all color choices meet WCAG 3.0 minimum contrast ratio of 4.5:1 for text. Document the design system in a way that can be referenced by all developers working on the project.",
-        "testStrategy": "Validate the design system by creating sample components with the defined tokens. Verify contrast ratios using accessibility tools. Review with stakeholders to ensure alignment with brand guidelines and PRD requirements.",
-        "priority": "high",
+        "description": "Create a comprehensive design system implementation based on the existing design.json file, ensuring compliance with PRD specifications for colors, typography, spacing, and icons.",
+        "status": "in-progress",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Implement the design system in code using the existing design tokens from design.json without modifying the file:\n- Colors: Use the existing color palette for status states (active/idle/error), backgrounds, overlays, and department tags\n- Typography: Implement the defined hierarchy for titles, body text, and tags with appropriate weights (medium for department names, regular for agent roles)\n- Spacing: Apply standardized card padding, line height, and grid spacing from design.json\n- Icons: Implement the existing icon set for status indicators and departments\n\nEnsure all color implementations meet WCAG 3.0 minimum contrast ratio of 4.5:1 for text. Create developer-friendly documentation that explains how to use the design system in the project.",
+        "testStrategy": "Validate the design system implementation by creating sample components with the defined tokens. Verify contrast ratios using accessibility tools. Review with stakeholders to ensure alignment with brand guidelines and PRD requirements. Test the implementation across different browsers and devices.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze Existing design.json File",
+            "description": "Review and document the structure and contents of the existing design.json file to understand available tokens and how they should be implemented.",
+            "status": "done",
+            "dependencies": [],
+            "details": "1. Locate and analyze the existing design.json file\n2. Document the color tokens available for status states, backgrounds, overlays, and department tags\n3. Identify typography definitions including font families, sizes, weights, and line heights\n4. Map out spacing tokens and their intended usage\n5. Catalog available icons and their naming conventions\n6. Create a reference document showing the complete token structure\n7. Identify any potential gaps between design.json and PRD requirements",
+            "testStrategy": "Verify completeness of documentation by having another team member review it. Confirm all tokens in design.json are properly documented and understood."
+          },
+          {
+            "id": 2,
+            "title": "Implement Color System from design.json",
+            "description": "Create a code implementation of the color system based on the existing tokens in design.json that meets WCAG 3.0 accessibility standards.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create a theme.js or styles.css file to implement color tokens from design.json\n2. Map color tokens for status states (active, idle, error) to CSS variables or theme properties\n3. Implement background colors for cards, panels, and main content areas\n4. Set up overlay colors with appropriate opacity levels\n5. Implement department tag colors as defined in design.json\n6. Test all color combinations against WCAG 3.0 standards (minimum 4.5:1 contrast ratio)\n7. Document how developers should use the color system in their components",
+            "testStrategy": "Use contrast checking tools like WebAIM to verify all text/background combinations meet WCAG 3.0 standards. Create sample components with each color to validate visual harmony and accessibility."
+          },
+          {
+            "id": 3,
+            "title": "Implement Typography System from design.json",
+            "description": "Create a code implementation of the typography system based on the existing tokens in design.json.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Implement font families from design.json in CSS or theme configuration\n2. Create CSS classes or styled components for the font size scale (h1, h2, h3, body, caption)\n3. Apply font weights as specified in design.json (medium for department names, regular for agent roles)\n4. Implement line heights for optimal readability\n5. Set up letter spacing based on design.json specifications\n6. Create utility classes or mixins for common text styles\n7. Document how developers should use the typography system in their components",
+            "testStrategy": "Test typography implementation across different screen sizes to ensure readability. Verify that the hierarchy is clear and that text remains legible at various zoom levels."
+          },
+          {
+            "id": 4,
+            "title": "Implement Spacing and Layout System from design.json",
+            "description": "Create a code implementation of the spacing system based on the existing tokens in design.json.",
+            "status": "in-progress",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Implement spacing scale from design.json as CSS variables or theme properties\n2. Create utility classes for standard spacing values (xs, sm, md, lg, xl)\n3. Implement card padding standards based on design.json specifications\n4. Set up grid spacing and gutters for layout consistency\n5. Apply line height values that work with the typography system\n6. Create mixins or utility functions for common spacing patterns\n7. Document how developers should use the spacing system in their layouts",
+            "testStrategy": "Create sample layouts using the spacing system to verify visual consistency. Test layouts at different screen sizes to ensure the spacing system scales appropriately."
+          },
+          {
+            "id": 5,
+            "title": "Implement Icon System from design.json",
+            "description": "Create a code implementation of the icon system based on the existing icons defined in design.json.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create an icon component that uses the icons defined in design.json\n2. Implement status indicator icons (active, idle, error)\n3. Set up department-specific icons as defined in design.json\n4. Ensure consistent sizing, stroke width, and corner radius for all icons\n5. Implement icons to work well in both light and dark themes\n6. Create an icon library or component that developers can easily import\n7. Document icon usage guidelines and naming conventions",
+            "testStrategy": "Test icons at different sizes to ensure they remain clear and recognizable. Verify that icons maintain visual consistency when used together and that they align with the color system."
+          },
+          {
+            "id": 6,
+            "title": "Create Developer Documentation for Design System",
+            "description": "Create comprehensive documentation that explains how to use the implemented design system in the project.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "1. Create a design system documentation with examples of all implemented tokens\n2. Document how to use color tokens in components\n3. Provide examples of typography usage in different contexts\n4. Create spacing and layout usage guidelines with code examples\n5. Document the icon component API and usage patterns\n6. Include code snippets showing proper implementation of each system\n7. Create a simple storybook or example page showcasing the design system in action",
+            "testStrategy": "Review the documentation with developers to ensure clarity and completeness. Have developers implement sample components using the documentation to verify usability."
+          }
+        ]
       },
       {
         "id": 2,
@@ -23,7 +91,64 @@
           1
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CSS Grid Layout for Organization Chart",
+            "description": "Set up the base grid layout for the organization chart with proper spacing and responsive behavior.",
+            "dependencies": [],
+            "details": "Create the foundational CSS grid layout for the organization chart. Implement the .org-chart class with grid properties that allow for responsive behavior. Set up appropriate gap variables for consistent spacing between elements. Ensure the grid adapts to different screen sizes using minmax and auto-fit properties.",
+            "status": "pending",
+            "testStrategy": "Test the grid layout at various viewport sizes to ensure responsiveness. Verify that elements maintain proper spacing across different screen sizes. Check that the grid properly wraps elements on smaller screens."
+          },
+          {
+            "id": 2,
+            "title": "Implement Hierarchy Level Styling",
+            "description": "Create CSS classes for different hierarchy levels with proper indentation and visual differentiation.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Implement CSS classes for each hierarchy level (.hierarchy-level-1, .hierarchy-level-2, etc.) with appropriate margin-left values to create proper indentation. Use CSS custom properties (variables) for spacing to maintain consistency. Ensure each level is visually distinct while maintaining a cohesive look. Apply additional styling such as font-weight or size variations to further emphasize the hierarchy.",
+            "status": "pending",
+            "testStrategy": "Verify that each hierarchy level is properly indented and visually distinct. Test with deep hierarchies to ensure the pattern scales appropriately. Check that the visual hierarchy remains clear even with complex organizational structures."
+          },
+          {
+            "id": 3,
+            "title": "Implement Connection Line Styling",
+            "description": "Create styles for solid and dashed connection lines with appropriate weights to visually represent relationships.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Implement the .connection-line-solid and .connection-line-dashed classes with appropriate border-width and border-style properties. Use thicker lines (2px) for solid connections to represent direct relationships and thinner lines (1px) for dashed connections to represent indirect relationships. Add appropriate colors that work in both light and dark themes. Ensure lines connect elements properly with correct positioning.",
+            "status": "pending",
+            "testStrategy": "Test that connection lines properly connect related elements. Verify that solid and dashed lines are visually distinct. Check that lines maintain proper appearance at different zoom levels and screen resolutions."
+          },
+          {
+            "id": 4,
+            "title": "Implement Grid/Guide Background",
+            "description": "Add subtle background grid or guides to help with orientation during navigation of the organization chart.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Create a subtle grid or guide background using CSS. This can be implemented using background-image with linear-gradient to create light grid lines, or by adding subtle borders to container elements. Ensure the grid is visible enough to provide orientation but not so prominent that it distracts from the content. Make the grid responsive to maintain consistent appearance across different screen sizes.",
+            "status": "pending",
+            "testStrategy": "Verify that the grid/guide background is subtle enough not to distract but visible enough to aid orientation. Test at different zoom levels to ensure the grid maintains appropriate visibility. Check that the grid adapts properly to different screen sizes."
+          },
+          {
+            "id": 5,
+            "title": "Implement Element Alignment and Spacing Consistency",
+            "description": "Ensure proper alignment of elements at each hierarchy level and consistent spacing throughout the organization chart.",
+            "dependencies": [
+              "2.1",
+              "2.2",
+              "2.3",
+              "2.4"
+            ],
+            "details": "Review and refine the alignment of all elements within the organization chart. Implement consistent vertical and horizontal alignment for elements at the same hierarchy level. Use CSS Flexbox within grid cells if needed for precise alignment. Ensure consistent spacing between elements both horizontally and vertically. Create helper classes for alignment if necessary. Verify that all elements maintain proper alignment when the chart is resized or when content varies in length.",
+            "status": "pending",
+            "testStrategy": "Test alignment with various content lengths to ensure consistency. Verify that elements at the same hierarchy level maintain proper alignment. Check spacing consistency throughout the chart. Test with different organizational structures to ensure the alignment system scales appropriately."
+          }
+        ]
       },
       {
         "id": 3,
@@ -36,7 +161,62 @@
           1
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Minimal Agent Card Component Structure",
+            "description": "Refactor the AgentCard component to display only essential information (role, status, and department tag) with a clean, minimal design.",
+            "dependencies": [],
+            "details": "Modify the existing AgentCard component to remove any non-essential information. Restructure the JSX to have a cleaner hierarchy with proper semantic HTML elements. Ensure the component only displays role, status indicator, and department tag. Implement proper spacing between elements using CSS variables for consistency. Example implementation:\n```jsx\nconst AgentCard = ({ agent }) => (\n  <div className=\"agent-card\">\n    <div className=\"agent-card__header\">\n      <span className=\"agent-role\">{agent.role}</span>\n      <StatusIndicator status={agent.status} />\n    </div>\n    <div className=\"agent-card__body\">\n      <DepartmentTag department={agent.department} />\n    </div>\n  </div>\n);\n```",
+            "status": "pending",
+            "testStrategy": "Verify that the card displays only the essential information. Check that the component renders correctly with different agent data. Ensure the component structure is semantically correct and accessible."
+          },
+          {
+            "id": 2,
+            "title": "Implement Card Styling with Proper Spacing",
+            "description": "Style the agent cards with consistent spacing, proper typography, and a clean layout that reduces cognitive load.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Create CSS styles for the agent card that implement proper spacing and typography. Use CSS variables for consistent spacing throughout the component. Implement a clean, minimal design with appropriate whitespace. Ensure text is properly aligned and sized for readability. Example implementation:\n```css\n.agent-card {\n  padding: var(--spacing-md);\n  border-radius: var(--border-radius-sm);\n  background-color: var(--card-bg);\n  box-shadow: var(--shadow-sm);\n  margin-bottom: var(--spacing-md);\n  width: 100%;\n  max-width: 300px;\n}\n\n.agent-card__header {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  margin-bottom: var(--spacing-sm);\n}\n\n.agent-role {\n  font-weight: var(--font-weight-medium);\n  font-size: var(--font-size-md);\n  color: var(--text-primary);\n}\n\n.agent-card__body {\n  margin-top: var(--spacing-sm);\n}\n```",
+            "status": "pending",
+            "testStrategy": "Test the card styling at different screen sizes to ensure responsiveness. Verify that spacing is consistent and the design reduces cognitive load. Check that typography is readable at different zoom levels."
+          },
+          {
+            "id": 3,
+            "title": "Add Hover States and Interactive Elements",
+            "description": "Implement hover states that highlight card edges and add interactive elements that appear on hover.",
+            "dependencies": [
+              "3.2"
+            ],
+            "details": "Add hover effects to the agent cards that highlight the card edges when hovered. Implement the hover actions section that appears only when the card is hovered. Style the action buttons appropriately. Example implementation:\n```css\n.agent-card {\n  /* existing styles */\n  transition: box-shadow 0.2s ease, transform 0.2s ease;\n  position: relative;\n}\n\n.agent-card:hover {\n  box-shadow: var(--shadow-md);\n  transform: translateY(-2px);\n  border: 1px solid var(--primary-light);\n}\n\n.agent-card__hover-actions {\n  position: absolute;\n  bottom: 0;\n  right: 0;\n  padding: var(--spacing-sm);\n  display: flex;\n  gap: var(--spacing-xs);\n  opacity: 0;\n  transition: opacity 0.2s ease;\n}\n\n.agent-card:hover .agent-card__hover-actions {\n  opacity: 1;\n}\n```\n\nAnd update the JSX to include the hover actions:\n```jsx\n<div className=\"agent-card__hover-actions\">\n  <ActionButton type=\"start\" />\n  <ActionButton type=\"stop\" />\n  <ActionButton type=\"error\" />\n</div>\n```",
+            "status": "pending",
+            "testStrategy": "Test hover interactions across different browsers and devices. Verify that hover states are intuitive and provide clear feedback. Ensure that action buttons are accessible and function correctly."
+          },
+          {
+            "id": 4,
+            "title": "Ensure Readability at Different Zoom Levels",
+            "description": "Optimize the agent card design to maintain readability and usability at different zoom levels and screen densities.",
+            "dependencies": [
+              "3.2"
+            ],
+            "details": "Implement responsive design techniques to ensure the agent cards remain readable at different zoom levels. Use relative units (em, rem) for typography and spacing. Test and adjust the design at various zoom levels. Implement media queries if necessary to adjust the design at different screen sizes. Example implementation:\n```css\n.agent-card {\n  /* existing styles */\n  font-size: 1rem; /* Base font size */\n}\n\n.agent-role {\n  font-size: 1.1em; /* Relative to parent */\n}\n\n/* Media query for smaller screens */\n@media (max-width: 768px) {\n  .agent-card {\n    max-width: 100%;\n    padding: var(--spacing-sm);\n  }\n}\n\n/* Media query for larger screens */\n@media (min-width: 1200px) {\n  .agent-card {\n    max-width: 350px;\n  }\n}\n```",
+            "status": "pending",
+            "testStrategy": "Test the cards at different browser zoom levels (75%, 100%, 125%, 150%). Verify readability on different screen densities and sizes. Ensure that all information remains accessible and usable regardless of zoom level."
+          },
+          {
+            "id": 5,
+            "title": "Connect Card Selection to Side Panel Details",
+            "description": "Implement the interaction between agent cards and the side panel to display extended details when a card is selected.",
+            "dependencies": [
+              "3.1",
+              "3.3"
+            ],
+            "details": "Create the functionality to show extended agent details in the side panel when a card is clicked. Implement a selected state for the cards to indicate which agent's details are currently displayed. Add an onClick handler to the AgentCard component that triggers the display of extended details in the side panel. Example implementation:\n```jsx\nconst AgentCard = ({ agent, isSelected, onSelect }) => (\n  <div \n    className={`agent-card ${isSelected ? 'agent-card--selected' : ''}`}\n    onClick={() => onSelect(agent.id)}\n  >\n    {/* existing card content */}\n  </div>\n);\n\n// In parent component\nconst [selectedAgentId, setSelectedAgentId] = useState(null);\n\nconst handleSelectAgent = (agentId) => {\n  setSelectedAgentId(agentId);\n};\n\n// Render side panel with selected agent details\n{selectedAgentId && (\n  <SidePanel \n    agent={agents.find(a => a.id === selectedAgentId)}\n    onClose={() => setSelectedAgentId(null)}\n  />\n)}\n```\n\nAdd selected state styling:\n```css\n.agent-card--selected {\n  border: 2px solid var(--primary);\n  box-shadow: var(--shadow-md);\n}\n```",
+            "status": "pending",
+            "testStrategy": "Test the selection interaction to ensure it correctly displays the selected agent's details in the side panel. Verify that the selected state is visually clear. Test keyboard navigation and accessibility of the selection mechanism."
+          }
+        ]
       },
       {
         "id": 4,
@@ -49,7 +229,63 @@
           1
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit and Refine Dark Theme Color Palette",
+            "description": "Analyze the current dark theme color palette and refine it to ensure all colors meet WCAG 3.0 contrast standards while maintaining visual appeal and reducing eye strain.",
+            "dependencies": [],
+            "details": "Use color contrast analysis tools to evaluate the current palette. Refine the CSS variables for dark theme, focusing on background colors, text colors, and accent colors. Create a comprehensive color palette that avoids pure black (#000) in favor of dark grays. Document the contrast ratios for each text/background combination to ensure they meet the 4.5:1 minimum requirement.",
+            "status": "pending",
+            "testStrategy": "Use WebAIM Contrast Checker or similar tools to verify all color combinations meet WCAG 3.0 standards. Test the palette under different lighting conditions and screen brightness levels."
+          },
+          {
+            "id": 2,
+            "title": "Implement Core Dark Theme CSS Variables and Base Styles",
+            "description": "Create a comprehensive set of CSS variables for the dark theme and implement the base styles that will be applied globally when dark mode is active.",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Expand the current CSS implementation to include a complete set of dark theme variables. Include variables for primary and secondary backgrounds, text colors at different hierarchy levels, border colors, focus states, and interactive element states. Implement the .dark-theme class that applies these variables to the root elements. Ensure smooth transitions between light and dark themes.",
+            "status": "pending",
+            "testStrategy": "Verify that all CSS variables are properly defined and accessible. Test the base theme application by toggling between light and dark modes to ensure all elements receive appropriate styling."
+          },
+          {
+            "id": 3,
+            "title": "Apply Dark Theme to Component-Specific Elements",
+            "description": "Extend the dark theme implementation to handle specific UI components that may require custom styling beyond the base theme variables.",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "Identify UI components that need special handling in dark mode (cards, buttons, form elements, modals, tooltips, etc.). Create component-specific dark theme styles that maintain visual consistency while ensuring proper contrast. Pay special attention to borders, shadows, and dividers to ensure they're visible but not harsh in dark mode. Update the CSS to handle these component-specific cases.",
+            "status": "pending",
+            "testStrategy": "Test each component individually in dark mode to verify proper styling. Create a visual inventory of all components in both light and dark modes to ensure consistency."
+          },
+          {
+            "id": 4,
+            "title": "Implement Theme Toggle Functionality with Persistence",
+            "description": "Create a user-friendly theme toggle mechanism that allows users to switch between light and dark themes, with the selection persisted across sessions.",
+            "dependencies": [
+              "4.2",
+              "4.3"
+            ],
+            "details": "Implement a toggle component that switches between light and dark themes. Use localStorage or similar mechanism to persist the user's theme preference. Ensure the theme is applied immediately upon page load to prevent flash of incorrect theme. Add logic to respect the user's system preference (prefers-color-scheme media query) for the initial theme if no saved preference exists.",
+            "status": "pending",
+            "testStrategy": "Test theme switching in different browsers and devices. Verify that the theme preference is correctly saved and restored across page reloads and new sessions. Test the system preference detection functionality."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Comprehensive Accessibility Testing and Refinement",
+            "description": "Perform thorough testing of the dark theme implementation across the entire application to identify and fix any contrast or readability issues.",
+            "dependencies": [
+              "4.3",
+              "4.4"
+            ],
+            "details": "Create a testing plan that covers all UI elements and states in dark mode. Use automated accessibility tools to scan for contrast issues. Manually review all interactive elements, form states (focus, error, disabled), and dynamic content. Pay special attention to text on gradients or images. Document and fix any identified issues. Consider edge cases like user-generated content that might have unpredictable colors.",
+            "status": "pending",
+            "testStrategy": "Use a combination of automated tools (Axe, Lighthouse) and manual testing. Test with actual assistive technologies. Conduct user testing with individuals who prefer or require dark themes, including those with visual sensitivities."
+          }
+        ]
       },
       {
         "id": 5,
@@ -63,7 +299,63 @@
           3
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Base StatusIndicator Component Structure",
+            "description": "Implement the core StatusIndicator component with proper props validation and basic structure that will support different states.",
+            "dependencies": [],
+            "details": "Create the StatusIndicator component with TypeScript props interface. Implement the getStatusDetails function to map status values to visual properties. Set up the basic component structure with icon and text display. Ensure proper prop types validation and default values.",
+            "status": "pending",
+            "testStrategy": "Test component rendering with different status values. Verify that the component correctly maps each status to the appropriate icon and color."
+          },
+          {
+            "id": 2,
+            "title": "Implement Status-Specific Styling and Colors",
+            "description": "Add the appropriate styling for each status state, ensuring consistent color usage and proper contrast ratios.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Define CSS variables for status colors in the theme. Create status-specific classes for each state (active, idle, error, default). Implement styling that applies the appropriate colors to both icon and text. Ensure all color combinations meet WCAG contrast requirements of at least 4.5:1 ratio.",
+            "status": "pending",
+            "testStrategy": "Test with color contrast analyzers to verify accessibility standards. Use color blindness simulators to ensure states are distinguishable without relying solely on color."
+          },
+          {
+            "id": 3,
+            "title": "Add Status Animations",
+            "description": "Implement subtle animations for different status states to provide real-time feedback.",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Create CSS animations for the different states: pulse animation for active status, slow blink for error status, and no animation for idle status. Use CSS keyframes for smooth transitions. Keep animations subtle and not distracting. Implement animation classes that can be conditionally applied based on status.",
+            "status": "pending",
+            "testStrategy": "Test animations across different browsers to ensure consistent behavior. Verify that animations respect user preferences for reduced motion. Measure performance impact to ensure animations don't cause layout shifts or performance issues."
+          },
+          {
+            "id": 4,
+            "title": "Implement Accessibility Features",
+            "description": "Enhance the component with proper accessibility attributes to ensure screen reader compatibility and keyboard navigation.",
+            "dependencies": [
+              "5.1",
+              "5.2"
+            ],
+            "details": "Add appropriate ARIA attributes to convey status information to screen readers. Implement proper semantic HTML structure. Add screen reader text that describes the status beyond just the label. Ensure focus states are visible and properly styled. Add keyboard navigation support for interactive elements.",
+            "status": "pending",
+            "testStrategy": "Test with screen readers (NVDA, VoiceOver, JAWS) to verify status is properly announced. Verify keyboard navigation works correctly. Test with users who rely on assistive technologies to validate the implementation."
+          },
+          {
+            "id": 5,
+            "title": "Integrate StatusIndicator Across Application",
+            "description": "Implement the StatusIndicator component consistently across all relevant parts of the application.",
+            "dependencies": [
+              "5.3",
+              "5.4"
+            ],
+            "details": "Identify all locations in the application where status indicators are needed. Replace existing status displays with the new StatusIndicator component. Ensure consistent usage of status terminology across the application. Create documentation for the component usage to maintain consistency. Update any related components that interact with status information.",
+            "status": "pending",
+            "testStrategy": "Perform integration testing to verify the component works correctly in all contexts. Test across different screen sizes to ensure responsive behavior. Conduct user testing to validate that the status indicators effectively communicate state information."
+          }
+        ]
       },
       {
         "id": 6,
@@ -76,7 +368,65 @@
           3
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Card Border Highlight Effect on Hover",
+            "description": "Add CSS transitions to highlight agent card edges when users hover over them, creating a subtle glow or border change effect.",
+            "dependencies": [],
+            "details": "Implement the CSS for the card border highlight effect by applying the transition properties to the agent-card class. Ensure the border changes from transparent to the primary color with a subtle box-shadow glow effect. Use CSS variables for color consistency and set appropriate transition timing (200ms) with ease-out easing for a smooth effect.",
+            "status": "pending",
+            "testStrategy": "Test hover interactions across different browsers to ensure consistent behavior. Verify that the transition is smooth and not jarring. Check that the highlight effect is visible but not distracting."
+          },
+          {
+            "id": 2,
+            "title": "Create Quick Action Buttons Reveal Animation",
+            "description": "Implement the animation that reveals quick action buttons (Start/Stop/Error) when a user hovers over an agent card.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Create the hover-actions container within the agent card component and implement the opacity transition. Set the default opacity to 0 and transition to opacity 1 on card hover. Use a slightly faster transition (150ms) with ease-in timing for the reveal effect. Position the action buttons appropriately within the container.",
+            "status": "pending",
+            "testStrategy": "Test that buttons appear smoothly on hover and disappear when hover ends. Verify that the transition timing feels natural. Ensure the buttons are properly positioned and aligned within the card."
+          },
+          {
+            "id": 3,
+            "title": "Implement Button Hover and Active State Animations",
+            "description": "Add visual feedback for button hover and active states to improve user interaction experience with the quick action buttons.",
+            "dependencies": [
+              "6.2"
+            ],
+            "details": "Apply transform scale transitions to the action buttons to provide visual feedback. Use a subtle scale increase (1.05) on hover and a slight scale decrease (0.95) on active/click state. Set transition duration to 100ms for quick response. Ensure the transform origin is centered for balanced scaling.",
+            "status": "pending",
+            "testStrategy": "Test button interactions to verify smooth scaling effects. Check that the active state provides clear feedback when buttons are clicked. Verify that transitions don't interfere with button functionality."
+          },
+          {
+            "id": 4,
+            "title": "Ensure Keyboard Accessibility for Hover Actions",
+            "description": "Make sure all hover-based interactions are accessible via keyboard navigation for users who don't use mouse hover.",
+            "dependencies": [
+              "6.2",
+              "6.3"
+            ],
+            "details": "Implement focus states that mirror hover states for keyboard navigation. Add tabindex attributes to ensure proper focus order. Use :focus and :focus-visible CSS selectors to apply the same visual effects as hover states. Ensure that the quick action buttons are accessible via keyboard and that their active states work with keyboard interaction (Enter/Space keys).",
+            "status": "pending",
+            "testStrategy": "Test all interactions using keyboard-only navigation. Verify that focus states are visually equivalent to hover states. Ensure that screen readers properly announce the interactive elements and their states."
+          },
+          {
+            "id": 5,
+            "title": "Optimize Performance and Apply Final Polish",
+            "description": "Optimize the animations for performance and apply final polish to ensure smooth interactions across all devices and browsers.",
+            "dependencies": [
+              "6.1",
+              "6.2",
+              "6.3",
+              "6.4"
+            ],
+            "details": "Review and optimize CSS transitions by using transform and opacity properties where possible instead of animating layout properties. Add will-change hints for elements that will animate frequently. Test and adjust transition timings for optimal feel. Add media queries to respect user preferences for reduced motion. Ensure all transitions are consistent across the component.",
+            "status": "pending",
+            "testStrategy": "Test performance on lower-end devices to ensure animations remain smooth. Verify that animations respect the prefers-reduced-motion media query. Conduct final cross-browser testing to ensure consistent behavior across Chrome, Firefox, Safari, and Edge."
+          }
+        ]
       },
       {
         "id": 7,
@@ -90,7 +440,62 @@
           3
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up animation utility functions",
+            "description": "Create utility functions to handle position tracking and animation setup for reorganized elements",
+            "dependencies": [],
+            "details": "Implement a utility module with functions to: 1) Calculate and store original element positions, 2) Determine position deltas after reorganization, and 3) Set up the initial state for animations. Include helper functions for handling getBoundingClientRect() calculations and position data storage. This will serve as the foundation for all animated transitions.",
+            "status": "pending",
+            "testStrategy": "Unit test the utility functions with mock DOM elements to verify position calculations are accurate. Test with various element sizes and positions to ensure robustness."
+          },
+          {
+            "id": 2,
+            "title": "Implement FLIP animation technique",
+            "description": "Apply the FLIP (First-Last-Invert-Play) animation technique to create performant transitions",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Implement the core animation function using the FLIP technique: 1) First: Record the initial positions of elements, 2) Last: Apply the new organization structure, 3) Invert: Apply transforms to make elements appear in their original positions, 4) Play: Transition elements to their final positions with appropriate easing. Use requestAnimationFrame for optimal performance and implement the transform and transition properties as shown in the example code.",
+            "status": "pending",
+            "testStrategy": "Test the animation with various reorganization scenarios including simple and complex movements. Verify that elements maintain visual continuity during transitions."
+          },
+          {
+            "id": 3,
+            "title": "Add subtle visual enhancements",
+            "description": "Enhance animations with subtle scaling and opacity changes to improve visual feedback",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Extend the animation implementation to include subtle visual enhancements: 1) Add a slight scale reduction (0.98) at the beginning of movement, 2) Implement a subtle opacity change (0.9) during transition, 3) Ensure these effects are synchronized with position changes. These enhancements should make the transitions feel more natural and help users track the movement of elements.",
+            "status": "pending",
+            "testStrategy": "Conduct visual testing to ensure enhancements are subtle and not distracting. Test with users to gather feedback on the perceived smoothness and intuitiveness of the animations."
+          },
+          {
+            "id": 4,
+            "title": "Implement easing functions and timing controls",
+            "description": "Create configurable easing functions and duration controls for natural movement",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Implement a system for configurable animation parameters: 1) Create a set of easing functions (cubic-bezier presets) optimized for different types of movements, 2) Set up duration controls within the 300-500ms range, 3) Add acceleration/deceleration patterns for natural movement, 4) Implement a configuration object that allows easy adjustment of these parameters. Default to cubic-bezier(0.2, 0, 0.2, 1) for a natural ease-out effect.",
+            "status": "pending",
+            "testStrategy": "Test different easing functions with various reorganization patterns to identify the most natural-feeling options. Measure animation durations to ensure they stay within the specified range."
+          },
+          {
+            "id": 5,
+            "title": "Add reduced motion support and cleanup",
+            "description": "Implement respect for user preferences regarding reduced motion and handle animation cleanup",
+            "dependencies": [
+              "7.3",
+              "7.4"
+            ],
+            "details": "Finalize the animation implementation with accessibility and cleanup: 1) Detect and respect the prefers-reduced-motion media query, providing simplified or no animations when enabled, 2) Implement proper cleanup of animation styles after completion to prevent interference with subsequent interactions, 3) Add event listeners for animation end to trigger any post-animation actions, 4) Handle edge cases like interrupted animations or rapid successive reorganizations. Ensure the system gracefully degrades for users who prefer reduced motion.",
+            "status": "pending",
+            "testStrategy": "Test with prefers-reduced-motion enabled to verify appropriate behavior. Test rapid successive reorganizations to ensure animations handle interruptions gracefully. Verify that no lingering styles remain after animations complete."
+          }
+        ]
       },
       {
         "id": 8,
@@ -103,7 +508,62 @@
           1
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Priority Chips/Tags Component",
+            "description": "Create a reusable component for displaying color-coded priority tags that will be used within task items.",
+            "dependencies": [],
+            "details": "Create a PriorityTag component that accepts a priority level ('high', 'medium', 'low') and renders an appropriately styled and color-coded chip/tag. Use the specified colors (high: red, medium: yellow, low: blue) and ensure the component has good contrast for accessibility. Include a small icon or visual indicator alongside the text label for better visual recognition.",
+            "status": "pending",
+            "testStrategy": "Test rendering of all three priority states. Verify color contrast meets WCAG standards. Test with screen readers to ensure accessibility."
+          },
+          {
+            "id": 2,
+            "title": "Enhance Sorting Controls with Improved UI",
+            "description": "Improve the existing sort controls with better visual affordances and interaction feedback.",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "Refactor the existing select dropdown for sorting into a more visually appealing component with clear affordances. Add visual indicators for the current sort direction (ascending/descending). Implement a toggle for sort direction and update the sortTasks function to handle both the sort field and direction. Style the controls to match the application's design system.",
+            "status": "pending",
+            "testStrategy": "Test all sorting combinations (field + direction). Verify keyboard accessibility for the enhanced controls. Test that sorting state is correctly maintained when tasks are updated."
+          },
+          {
+            "id": 3,
+            "title": "Implement Collapsible Task Sections",
+            "description": "Create a collapsible section component for grouping tasks and implement the expand/collapse functionality.",
+            "dependencies": [],
+            "details": "Complete the TaskSection component that renders a collapsible section with a header, toggle control, and task list. Implement the toggleSection function to update the expandedSections state. Add smooth animations for expanding/collapsing sections. Ensure the toggle control has appropriate accessibility attributes (aria-expanded, aria-controls) and can be operated by keyboard.",
+            "status": "pending",
+            "testStrategy": "Test expand/collapse functionality with mouse and keyboard. Verify that sections maintain their state when tasks are updated or sorted. Test with screen readers to ensure proper announcement of state changes."
+          },
+          {
+            "id": 4,
+            "title": "Implement Task Grouping and Sorting Logic",
+            "description": "Create utility functions to group and sort tasks based on different criteria.",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "Implement the sortTasks function to handle sorting by dueDate, priority, and status. Create the groupTasksBySection function to organize tasks into logical sections (e.g., by due date: 'Today', 'This Week', 'Later', or by status: 'To Do', 'In Progress', 'Done'). Ensure sorting respects the selected sort direction. Optimize the functions using memoization to prevent unnecessary re-calculations.",
+            "status": "pending",
+            "testStrategy": "Create unit tests with various task datasets to verify correct sorting and grouping. Test edge cases like empty lists, missing properties, and ties in sorting values."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Components and Ensure Consistent Styling",
+            "description": "Assemble all components into the final TaskPanel and ensure consistent styling throughout.",
+            "dependencies": [
+              "8.1",
+              "8.2",
+              "8.3",
+              "8.4"
+            ],
+            "details": "Integrate the PriorityTag component into task items. Connect the sorting controls to the sort logic. Ensure the TaskPanel correctly uses the groupTasksBySection function and renders TaskSection components. Apply consistent styling for all elements according to the application's design system. Add responsive styles to ensure the panel works well on different screen sizes. Implement loading and empty states for the task panel.",
+            "status": "pending",
+            "testStrategy": "Test the complete TaskPanel with various combinations of tasks, priorities, and sort options. Verify responsive behavior across different screen sizes. Conduct an accessibility audit of the final component."
+          }
+        ]
       },
       {
         "id": 9,
@@ -117,7 +577,64 @@
           3
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Basic Overlay Structure with Backdrop",
+            "description": "Implement the foundational overlay component with proper positioning, backdrop, and z-index to ensure it appears above the main content.",
+            "dependencies": [],
+            "details": "Create the DepartmentOverlay component with fixed positioning that covers the entire viewport. Implement the backdrop with semi-transparent background and blur effect. Ensure proper z-index values to maintain correct stacking context. Add the onClick handler to the backdrop for closing the overlay when clicking outside the content area.",
+            "status": "pending",
+            "testStrategy": "Test that the overlay appears correctly positioned above all other content. Verify the backdrop covers the entire screen and dims the background appropriately. Test that clicking the backdrop closes the overlay."
+          },
+          {
+            "id": 2,
+            "title": "Implement Overlay Content Container with Header",
+            "description": "Create the content container with proper styling, scrolling behavior, and header section with department name and close button.",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Implement the overlay content container with appropriate background color, border radius, and padding. Add max-width and max-height constraints with overflow handling for scrolling. Create the header section with the department name and close button. Style the header with proper spacing and alignment. Ensure the close button is clearly visible and accessible.",
+            "status": "pending",
+            "testStrategy": "Test the content container's responsiveness at different viewport sizes. Verify that scrolling works correctly when content exceeds the container height. Test that the close button is functional and properly positioned."
+          },
+          {
+            "id": 3,
+            "title": "Create Responsive Grid Layout for Department Items",
+            "description": "Implement the responsive grid layout for department items using CSS Grid with appropriate spacing and alignment.",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "Build the grid layout using CSS Grid with auto-fill and minmax to create a responsive tile layout. Configure appropriate gap values between grid items. Ensure the grid maintains proper alignment and spacing at various viewport sizes. Test with different numbers of items to verify the layout adapts correctly.",
+            "status": "pending",
+            "testStrategy": "Test the grid layout with various numbers of department items (few, many). Verify the grid responds appropriately to different viewport sizes. Check that spacing and alignment remain consistent across different device sizes."
+          },
+          {
+            "id": 4,
+            "title": "Implement Simplified AgentCard Component for Overlay",
+            "description": "Create or adapt the AgentCard component to work in simplified mode for the department overlay, maintaining consistent styling with the main view.",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Modify the existing AgentCard component to accept a 'simplified' prop that renders a more compact version suitable for the overlay grid. Ensure the simplified cards maintain the same visual language and styling as the main view cards. Remove unnecessary details while preserving essential information. Maintain consistent hover states and interactions.",
+            "status": "pending",
+            "testStrategy": "Compare simplified cards with main view cards to verify consistent styling. Test that all essential information is visible and readable in the simplified format. Verify that any interactive elements work correctly in the simplified view."
+          },
+          {
+            "id": 5,
+            "title": "Add Smooth Transitions and Animation Effects",
+            "description": "Implement smooth transitions for opening and closing the overlay, including fade-in/out and scaling effects for improved user experience.",
+            "dependencies": [
+              "9.1",
+              "9.2",
+              "9.3",
+              "9.4"
+            ],
+            "details": "Add CSS transitions for opacity and transform properties to create smooth fade and scale effects when opening and closing the overlay. Implement enter/exit animations using CSS keyframes or transition properties. Ensure transitions have appropriate timing (300-500ms) and easing functions for natural movement. Consider adding subtle animation to the grid items as they load for a polished effect.",
+            "status": "pending",
+            "testStrategy": "Test transitions at various screen sizes to ensure smooth performance. Verify that animations respect user preferences for reduced motion. Check that transitions don't interfere with usability or cause layout shifts."
+          }
+        ]
       },
       {
         "id": 10,
@@ -133,7 +650,63 @@
           9
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Content Dictionary Structure",
+            "description": "Implement the centralized content dictionary with categories for statuses, actions, entities, and error messages to ensure consistent terminology across the application.",
+            "dependencies": [],
+            "details": "Create a JavaScript module that exports the contentDictionary object with all required categories. Include helper functions like getContent() to retrieve values from the dictionary. Ensure the dictionary is structured to allow for easy maintenance and updates. The module should be imported wherever text content is displayed in the UI.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to verify the content dictionary structure and the getContent helper function returns expected values for valid keys and handles missing keys appropriately."
+          },
+          {
+            "id": 2,
+            "title": "Audit and Update Status Messages",
+            "description": "Review all status messages throughout the application and update them to use plain language that clearly communicates the current state to users.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Identify all status indicators in the application. Create a mapping of current technical terms to user-friendly alternatives (e.g., 'Idle' to 'Paused'). Update the contentDictionary.statuses object with the new terminology. Replace all hardcoded status text with references to the content dictionary using the getContent() function.",
+            "status": "pending",
+            "testStrategy": "Verify all status messages are sourced from the content dictionary. Test each status state in the UI to ensure the correct plain language term is displayed. Conduct a review with non-technical users to validate the clarity of the new status messages."
+          },
+          {
+            "id": 3,
+            "title": "Standardize Button Labels and Action Text",
+            "description": "Ensure all button labels and action text are concise, action-oriented, and consistently applied throughout the application.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Inventory all buttons and action elements in the UI. Update the contentDictionary.actions object with standardized, action-oriented labels. Replace hardcoded button text with references to the content dictionary. Ensure verb consistency (e.g., always use 'Add' not 'Create' for similar actions). Apply consistent capitalization rules (title case for all button labels).",
+            "status": "pending",
+            "testStrategy": "Review all UI screens to verify button labels follow the standardized format. Test that all buttons display text from the content dictionary rather than hardcoded values. Verify consistent capitalization and terminology across similar actions."
+          },
+          {
+            "id": 4,
+            "title": "Implement Error Message Guidelines",
+            "description": "Review and update all error messages to ensure they are helpful, actionable, and follow a consistent format that guides users toward resolution.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Audit all error messages in the application. Update the contentDictionary.errors object with clear, actionable error messages that explain what happened and how to fix it. Replace generic error messages with specific guidance. Implement a consistent error message structure (Problem + Solution format). Ensure error messages use plain language and avoid technical jargon.",
+            "status": "pending",
+            "testStrategy": "Test error scenarios to verify messages are helpful and actionable. Verify error messages are sourced from the content dictionary. Conduct user testing to ensure error messages are understandable and provide clear next steps."
+          },
+          {
+            "id": 5,
+            "title": "Create Style Guide Documentation",
+            "description": "Document the UX writing guidelines in a comprehensive style guide that includes terminology glossary, capitalization rules, and punctuation standards for future content creation.",
+            "dependencies": [
+              "10.2",
+              "10.3",
+              "10.4"
+            ],
+            "details": "Create a markdown document that serves as the official UX writing style guide. Include sections for: terminology glossary (mapping approved terms to discouraged alternatives), capitalization rules (when to use sentence case vs. title case), punctuation standards (usage of periods, exclamation points, etc.), voice and tone guidelines, and examples of correct and incorrect usage. Store this document in the project repository for reference by all team members.",
+            "status": "pending",
+            "testStrategy": "Review the style guide with the development and design teams to ensure clarity and completeness. Verify that all current UI text follows the documented guidelines. Create a checklist based on the style guide that can be used for future content reviews."
+          }
+        ]
       },
       {
         "id": 11,
@@ -149,7 +722,63 @@
           9
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement proper tab order and keyboard navigation",
+            "description": "Set up proper tab order through all interactive elements in the application, ensuring users can navigate through cards, buttons, and other interactive elements using only the keyboard.",
+            "dependencies": [],
+            "details": "Update all interactive components to have appropriate tabIndex values. Ensure that tab order follows a logical flow through the UI. Implement keyboard event handlers (Enter/Space) for clickable elements. Add visible focus indicators that meet WCAG standards (min 3px width, high contrast). Example implementation: `<div tabIndex=\"0\" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleClick(); } }} className=\"interactive-element focus-visible\">Content</div>`",
+            "status": "pending",
+            "testStrategy": "Test navigation with keyboard only (Tab, Shift+Tab, Enter, Space, Arrow keys). Verify focus is visible and follows logical order. Test with keyboard navigation tools and verify against WCAG 2.1 AA standards."
+          },
+          {
+            "id": 2,
+            "title": "Add ARIA attributes to components",
+            "description": "Add appropriate ARIA roles, states, and properties to all components to ensure they are properly identified to assistive technologies.",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Audit all components and add appropriate ARIA attributes: role, aria-label, aria-labelledby, aria-describedby, aria-expanded, aria-hidden, etc. For agent cards, ensure they have appropriate roles (e.g., 'button' if clickable) and descriptive aria-labels. For interactive elements that change state, implement aria-expanded, aria-selected, or aria-checked as appropriate. For decorative elements, use aria-hidden=\"true\". Example: `<button aria-label=\"Edit agent ${agent.name}\" aria-expanded={isExpanded} onClick={toggleExpand}>Edit</button>`",
+            "status": "pending",
+            "testStrategy": "Test with screen readers (NVDA, VoiceOver, JAWS) to verify components are announced correctly. Use accessibility audit tools like axe or Lighthouse to identify missing ARIA attributes."
+          },
+          {
+            "id": 3,
+            "title": "Implement focus management for overlays and modals",
+            "description": "Create a focus trap system for overlays and modals to ensure keyboard focus remains within the active dialog and returns properly when closed.",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Implement a focus trap utility that: 1) Stores the element that had focus before opening the modal, 2) Automatically moves focus to the first focusable element in the modal when opened, 3) Traps focus within the modal by redirecting Tab and Shift+Tab at boundaries, 4) Returns focus to the original element when the modal is closed. Use the setupFocusTrap function from the example code as a starting point, and extend it to handle modal closing. Add event listeners for Escape key to close modals.",
+            "status": "pending",
+            "testStrategy": "Test focus trapping by opening modals and using Tab/Shift+Tab to navigate. Verify focus returns to the triggering element when modal closes. Test Escape key functionality for closing modals."
+          },
+          {
+            "id": 4,
+            "title": "Enhance agent cards with screen reader support",
+            "description": "Modify agent cards to properly announce name, role, department, and status information to screen readers, and ensure all interactive elements within cards are accessible.",
+            "dependencies": [
+              "11.2"
+            ],
+            "details": "Update the agent card component to include comprehensive aria-label or aria-labelledby attributes that announce all relevant information. Implement the AccessibleAgentCard example from the task description. For complex cards, consider using aria-labelledby to reference visible text elements rather than duplicating content in aria-label. Ensure status indicators use both color and text/icons to convey information. Add appropriate role attributes to card sections (e.g., role=\"status\" for status indicators).",
+            "status": "pending",
+            "testStrategy": "Test with multiple screen readers to verify all card information is properly announced. Verify that status changes are announced appropriately. Test navigation between and within cards using keyboard only."
+          },
+          {
+            "id": 5,
+            "title": "Implement keyboard shortcuts for common actions",
+            "description": "Add keyboard shortcuts for frequently used actions to improve efficiency for keyboard users, with appropriate documentation and announcements.",
+            "dependencies": [
+              "11.1",
+              "11.3",
+              "11.4"
+            ],
+            "details": "Implement a keyboard shortcut system that: 1) Registers global shortcuts for common actions (e.g., '/' for search, 'Esc' for closing modals, 'n' for new agent), 2) Provides context-specific shortcuts when appropriate elements have focus, 3) Includes a help modal showing available shortcuts (triggered by '?'), 4) Announces shortcuts via aria-keyshortcuts attribute where appropriate. Create a central keyboard shortcut manager to avoid conflicts and provide consistent behavior. Example: `useEffect(() => { const handleKeyDown = (e) => { if (e.key === '/' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); openSearch(); } }; document.addEventListener('keydown', handleKeyDown); return () => document.removeEventListener('keydown', handleKeyDown); }, []);`",
+            "status": "pending",
+            "testStrategy": "Test all keyboard shortcuts in different contexts to ensure they work as expected. Verify shortcuts don't conflict with browser or screen reader shortcuts. Test the keyboard shortcut help modal for completeness and accessibility."
+          }
+        ]
       },
       {
         "id": 12,
@@ -162,12 +791,68 @@
           2
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Background Grid with Zoom-Responsive Scaling",
+            "description": "Create a background grid system that provides orientation cues and scales appropriately with zoom level changes",
+            "dependencies": [],
+            "details": "Create a function to generate a background grid with horizontal and vertical lines. The grid should have appropriate spacing and styling to serve as a subtle orientation cue. Implement opacity changes based on zoom level to maintain visual clarity. Add CSS classes for styling the grid lines with proper z-index to ensure they stay behind the content.",
+            "status": "pending",
+            "testStrategy": "Verify grid renders correctly at different viewport sizes. Test that grid lines scale appropriately at different zoom levels. Ensure grid doesn't interfere with interactions on content elements."
+          },
+          {
+            "id": 2,
+            "title": "Implement Zoom Functionality with Mouse Wheel and Buttons",
+            "description": "Create smooth zoom in/out functionality that works with both mouse wheel events and UI buttons",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Implement the zoom method in the ZoomPanManager class that handles mouse wheel events for zooming. Add logic to calculate the zoom point based on cursor position to create a natural zoom-to-cursor effect. Implement zoom buttons in the UI that call the same zoom functionality. Add constraints to prevent excessive zooming in or out beyond usable limits (e.g., 0.5 to 3.0 scale).",
+            "status": "pending",
+            "testStrategy": "Test zoom functionality with different input devices including mouse wheel, touchpad gestures, and UI buttons. Verify zoom behavior is smooth and intuitive. Test edge cases like rapid zooming and zooming at the boundaries of the content."
+          },
+          {
+            "id": 3,
+            "title": "Implement Pan Navigation with Drag Interactions",
+            "description": "Create intuitive pan navigation that allows users to drag the background to move around the content",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Implement the startDrag, drag, and stopDrag methods in the ZoomPanManager class. Add event listeners for mousedown, mousemove, and mouseup events to handle the dragging interaction. Update the cursor style during dragging to provide visual feedback. Ensure the pan functionality works correctly with the transformed content and maintains proper positioning.",
+            "status": "pending",
+            "testStrategy": "Test pan functionality with mouse and touch interactions. Verify that dragging works smoothly at different zoom levels. Test edge cases like rapid dragging and dragging near the edges of the container."
+          },
+          {
+            "id": 4,
+            "title": "Create Mini-Map Navigator for Orientation",
+            "description": "Implement a mini-map in a corner of the view that shows the current viewport position within the larger content area",
+            "dependencies": [
+              "12.2",
+              "12.3"
+            ],
+            "details": "Create a mini-map component that renders a scaled-down version of the entire content. Add a viewport indicator that shows the current visible area. Update the mini-map in real-time as the user zooms and pans. Implement two-way interaction so users can click or drag on the mini-map to navigate to that area in the main view. Position the mini-map in a corner with appropriate styling to be visible but not intrusive.",
+            "status": "pending",
+            "testStrategy": "Test that the mini-map accurately represents the content and viewport position. Verify that interactions with the mini-map correctly update the main view. Test performance to ensure real-time updates don't cause performance issues."
+          },
+          {
+            "id": 5,
+            "title": "Add Visual Cues for Current Zoom Level and Position",
+            "description": "Implement UI indicators that show the current zoom percentage and position to help users maintain orientation",
+            "dependencies": [
+              "12.2",
+              "12.3"
+            ],
+            "details": "Create a zoom level indicator that displays the current scale as a percentage (e.g., \"100%\"). Add position indicators that show the current viewport coordinates relative to the content. Update these indicators in real-time during zoom and pan operations. Implement the updateTransform method to handle these updates efficiently. Add subtle visual feedback when zoom limits are reached.",
+            "status": "pending",
+            "testStrategy": "Verify that zoom and position indicators update accurately during navigation. Test that indicators remain visible and legible at all zoom levels. Ensure indicators don't interfere with the main content or other UI elements."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-09-06T13:33:26.377Z",
-      "updated": "2025-09-06T13:33:26.377Z",
+      "updated": "2025-09-06T13:49:28.383Z",
       "description": "Tasks for master context"
     }
   }

@@ -63,3 +63,35 @@ function setupFocusTrap(containerRef) {
 
 # Test Strategy:
 Test with keyboard-only navigation to ensure all functionality is accessible. Use screen readers to verify proper announcements. Validate against WCAG 2.1 AA standards using automated and manual testing.
+
+# Subtasks:
+## 1. Implement proper tab order and keyboard navigation [pending]
+### Dependencies: None
+### Description: Set up proper tab order through all interactive elements in the application, ensuring users can navigate through cards, buttons, and other interactive elements using only the keyboard.
+### Details:
+Update all interactive components to have appropriate tabIndex values. Ensure that tab order follows a logical flow through the UI. Implement keyboard event handlers (Enter/Space) for clickable elements. Add visible focus indicators that meet WCAG standards (min 3px width, high contrast). Example implementation: `<div tabIndex="0" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleClick(); } }} className="interactive-element focus-visible">Content</div>`
+
+## 2. Add ARIA attributes to components [pending]
+### Dependencies: 11.1
+### Description: Add appropriate ARIA roles, states, and properties to all components to ensure they are properly identified to assistive technologies.
+### Details:
+Audit all components and add appropriate ARIA attributes: role, aria-label, aria-labelledby, aria-describedby, aria-expanded, aria-hidden, etc. For agent cards, ensure they have appropriate roles (e.g., 'button' if clickable) and descriptive aria-labels. For interactive elements that change state, implement aria-expanded, aria-selected, or aria-checked as appropriate. For decorative elements, use aria-hidden="true". Example: `<button aria-label="Edit agent ${agent.name}" aria-expanded={isExpanded} onClick={toggleExpand}>Edit</button>`
+
+## 3. Implement focus management for overlays and modals [pending]
+### Dependencies: 11.1
+### Description: Create a focus trap system for overlays and modals to ensure keyboard focus remains within the active dialog and returns properly when closed.
+### Details:
+Implement a focus trap utility that: 1) Stores the element that had focus before opening the modal, 2) Automatically moves focus to the first focusable element in the modal when opened, 3) Traps focus within the modal by redirecting Tab and Shift+Tab at boundaries, 4) Returns focus to the original element when the modal is closed. Use the setupFocusTrap function from the example code as a starting point, and extend it to handle modal closing. Add event listeners for Escape key to close modals.
+
+## 4. Enhance agent cards with screen reader support [pending]
+### Dependencies: 11.2
+### Description: Modify agent cards to properly announce name, role, department, and status information to screen readers, and ensure all interactive elements within cards are accessible.
+### Details:
+Update the agent card component to include comprehensive aria-label or aria-labelledby attributes that announce all relevant information. Implement the AccessibleAgentCard example from the task description. For complex cards, consider using aria-labelledby to reference visible text elements rather than duplicating content in aria-label. Ensure status indicators use both color and text/icons to convey information. Add appropriate role attributes to card sections (e.g., role="status" for status indicators).
+
+## 5. Implement keyboard shortcuts for common actions [pending]
+### Dependencies: 11.1, 11.3, 11.4
+### Description: Add keyboard shortcuts for frequently used actions to improve efficiency for keyboard users, with appropriate documentation and announcements.
+### Details:
+Implement a keyboard shortcut system that: 1) Registers global shortcuts for common actions (e.g., '/' for search, 'Esc' for closing modals, 'n' for new agent), 2) Provides context-specific shortcuts when appropriate elements have focus, 3) Includes a help modal showing available shortcuts (triggered by '?'), 4) Announces shortcuts via aria-keyshortcuts attribute where appropriate. Create a central keyboard shortcut manager to avoid conflicts and provide consistent behavior. Example: `useEffect(() => { const handleKeyDown = (e) => { if (e.key === '/' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); openSearch(); } }; document.addEventListener('keydown', handleKeyDown); return () => document.removeEventListener('keydown', handleKeyDown); }, []);`
+

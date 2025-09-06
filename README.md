@@ -104,6 +104,23 @@ npm run build
 npm run preview # serves dist on port 3000
 ```
 
+## Authentication (optional)
+
+This project can use Supabase for Google OAuth and Email/Password auth.
+
+1) Create a Supabase project and enable Google provider.
+2) (Optional) Create `profiles` table to store user info: columns `id uuid pk`, `email text`, `full_name text`, `avatar_url text`, `updated_at timestamptz`. Enable RLS; allow insert/update for `auth.uid() = id`.
+3) Add `.env` in project root:
+
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_REQUIRE_AUTH=true
+VITE_GOOGLE_REDIRECT_TO=http://localhost:3000/login.html
+```
+
+4) Visit `/login.html` to sign in. With `VITE_REQUIRE_AUTH=true`, the main app `/` redirects to login if unauthenticated. Use the toolbar Logout button to end the session.
+
 ## Example: How it looks now
 
 A compact sketch of the current org and a single agent card.

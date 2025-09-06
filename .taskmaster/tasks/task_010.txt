@@ -46,3 +46,35 @@ function getContent(category, key) {
 
 # Test Strategy:
 Review all UI text for compliance with the content guidelines. Test with users to ensure terminology is clear and understandable. Verify consistency across different parts of the application.
+
+# Subtasks:
+## 1. Create Content Dictionary Structure [pending]
+### Dependencies: None
+### Description: Implement the centralized content dictionary with categories for statuses, actions, entities, and error messages to ensure consistent terminology across the application.
+### Details:
+Create a JavaScript module that exports the contentDictionary object with all required categories. Include helper functions like getContent() to retrieve values from the dictionary. Ensure the dictionary is structured to allow for easy maintenance and updates. The module should be imported wherever text content is displayed in the UI.
+
+## 2. Audit and Update Status Messages [pending]
+### Dependencies: 10.1
+### Description: Review all status messages throughout the application and update them to use plain language that clearly communicates the current state to users.
+### Details:
+Identify all status indicators in the application. Create a mapping of current technical terms to user-friendly alternatives (e.g., 'Idle' to 'Paused'). Update the contentDictionary.statuses object with the new terminology. Replace all hardcoded status text with references to the content dictionary using the getContent() function.
+
+## 3. Standardize Button Labels and Action Text [pending]
+### Dependencies: 10.1
+### Description: Ensure all button labels and action text are concise, action-oriented, and consistently applied throughout the application.
+### Details:
+Inventory all buttons and action elements in the UI. Update the contentDictionary.actions object with standardized, action-oriented labels. Replace hardcoded button text with references to the content dictionary. Ensure verb consistency (e.g., always use 'Add' not 'Create' for similar actions). Apply consistent capitalization rules (title case for all button labels).
+
+## 4. Implement Error Message Guidelines [pending]
+### Dependencies: 10.1
+### Description: Review and update all error messages to ensure they are helpful, actionable, and follow a consistent format that guides users toward resolution.
+### Details:
+Audit all error messages in the application. Update the contentDictionary.errors object with clear, actionable error messages that explain what happened and how to fix it. Replace generic error messages with specific guidance. Implement a consistent error message structure (Problem + Solution format). Ensure error messages use plain language and avoid technical jargon.
+
+## 5. Create Style Guide Documentation [pending]
+### Dependencies: 10.2, 10.3, 10.4
+### Description: Document the UX writing guidelines in a comprehensive style guide that includes terminology glossary, capitalization rules, and punctuation standards for future content creation.
+### Details:
+Create a markdown document that serves as the official UX writing style guide. Include sections for: terminology glossary (mapping approved terms to discouraged alternatives), capitalization rules (when to use sentence case vs. title case), punctuation standards (usage of periods, exclamation points, etc.), voice and tone guidelines, and examples of correct and incorrect usage. Store this document in the project repository for reference by all team members.
+

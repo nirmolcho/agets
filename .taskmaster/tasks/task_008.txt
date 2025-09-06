@@ -53,3 +53,35 @@ const TaskPanel = ({ tasks }) => {
 
 # Test Strategy:
 Test with various task list lengths to ensure the collapsible sections work properly. Verify sorting functionality works correctly for all sort options. Test with keyboard navigation to ensure accessibility.
+
+# Subtasks:
+## 1. Implement Priority Chips/Tags Component [pending]
+### Dependencies: None
+### Description: Create a reusable component for displaying color-coded priority tags that will be used within task items.
+### Details:
+Create a PriorityTag component that accepts a priority level ('high', 'medium', 'low') and renders an appropriately styled and color-coded chip/tag. Use the specified colors (high: red, medium: yellow, low: blue) and ensure the component has good contrast for accessibility. Include a small icon or visual indicator alongside the text label for better visual recognition.
+
+## 2. Enhance Sorting Controls with Improved UI [pending]
+### Dependencies: 8.1
+### Description: Improve the existing sort controls with better visual affordances and interaction feedback.
+### Details:
+Refactor the existing select dropdown for sorting into a more visually appealing component with clear affordances. Add visual indicators for the current sort direction (ascending/descending). Implement a toggle for sort direction and update the sortTasks function to handle both the sort field and direction. Style the controls to match the application's design system.
+
+## 3. Implement Collapsible Task Sections [pending]
+### Dependencies: None
+### Description: Create a collapsible section component for grouping tasks and implement the expand/collapse functionality.
+### Details:
+Complete the TaskSection component that renders a collapsible section with a header, toggle control, and task list. Implement the toggleSection function to update the expandedSections state. Add smooth animations for expanding/collapsing sections. Ensure the toggle control has appropriate accessibility attributes (aria-expanded, aria-controls) and can be operated by keyboard.
+
+## 4. Implement Task Grouping and Sorting Logic [pending]
+### Dependencies: 8.2
+### Description: Create utility functions to group and sort tasks based on different criteria.
+### Details:
+Implement the sortTasks function to handle sorting by dueDate, priority, and status. Create the groupTasksBySection function to organize tasks into logical sections (e.g., by due date: 'Today', 'This Week', 'Later', or by status: 'To Do', 'In Progress', 'Done'). Ensure sorting respects the selected sort direction. Optimize the functions using memoization to prevent unnecessary re-calculations.
+
+## 5. Integrate Components and Ensure Consistent Styling [pending]
+### Dependencies: 8.1, 8.2, 8.3, 8.4
+### Description: Assemble all components into the final TaskPanel and ensure consistent styling throughout.
+### Details:
+Integrate the PriorityTag component into task items. Connect the sorting controls to the sort logic. Ensure the TaskPanel correctly uses the groupTasksBySection function and renders TaskSection components. Apply consistent styling for all elements according to the application's design system. Add responsive styles to ensure the panel works well on different screen sizes. Implement loading and empty states for the task panel.
+

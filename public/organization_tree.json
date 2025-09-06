@@ -1,0 +1,510 @@
+{
+    "organization": {
+      "ceo": {
+        "role": "chief-executive-officer",
+        "name": "CEO",
+        "department": "executive",
+        "level": 0,
+        "reportsTo": null,
+        "manages": [
+          "studio-operations-manager",
+          "design-manager",
+          "project-management-manager",
+          "product-manager",
+          "testing-manager",
+          "marketing-manager",
+          "engineering-manager",
+          "human-resources-manager",
+          "finance-manager",
+          "sales-manager",
+          "customer-success-manager",
+          "security-manager"
+        ]
+      },
+      "departments": [
+        {
+          "name": "studio-operations",
+          "manager": {
+            "role": "studio-operations-manager",
+            "name": "Operations Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "infrastructure-maintainer",
+              "name": "Infrastructure Maintainer",
+              "level": 2,
+              "reportsTo": "studio-operations-manager",
+              "testingConnections": ["workflow-optimizer", "performance-benchmarker"]
+            },
+            {
+              "role": "finance-tracker",
+              "name": "Finance Tracker",
+              "level": 2,
+              "reportsTo": "studio-operations-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            },
+            {
+              "role": "support-responder",
+              "name": "Support Responder",
+              "level": 2,
+              "reportsTo": "studio-operations-manager",
+              "testingConnections": ["api-tester", "workflow-optimizer"]
+            },
+            {
+              "role": "analytics-reporter",
+              "name": "Analytics Reporter",
+              "level": 2,
+              "reportsTo": "studio-operations-manager",
+              "testingConnections": ["test-results-analyzer", "performance-benchmarker"]
+            },
+            {
+              "role": "legal-compliance-checker",
+              "name": "Legal Compliance Checker",
+              "level": 2,
+              "reportsTo": "studio-operations-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            }
+          ]
+        },
+        {
+          "name": "design",
+          "manager": {
+            "role": "design-manager",
+            "name": "Design Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "visual-storyteller",
+              "name": "Visual Storyteller",
+              "level": 2,
+              "reportsTo": "design-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            },
+            {
+              "role": "ux-researcher",
+              "name": "UX Researcher",
+              "level": 2,
+              "reportsTo": "design-manager",
+              "testingConnections": ["test-results-analyzer", "workflow-optimizer"]
+            },
+            {
+              "role": "brand-guardian",
+              "name": "Brand Guardian",
+              "level": 2,
+              "reportsTo": "design-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            },
+            {
+              "role": "ui-designer",
+              "name": "UI Designer",
+              "level": 2,
+              "reportsTo": "design-manager",
+              "testingConnections": ["api-tester", "workflow-optimizer"]
+            },
+            {
+              "role": "whimsy-injector",
+              "name": "Whimsy Injector",
+              "level": 2,
+              "reportsTo": "design-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            }
+          ]
+        },
+        {
+          "name": "project-management",
+          "manager": {
+            "role": "project-management-manager",
+            "name": "PMO Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "experiment-tracker",
+              "name": "Experiment Tracker",
+              "level": 2,
+              "reportsTo": "project-management-manager",
+              "testingConnections": ["test-results-analyzer", "workflow-optimizer"]
+            },
+            {
+              "role": "project-shipper",
+              "name": "Project Shipper",
+              "level": 2,
+              "reportsTo": "project-management-manager",
+              "testingConnections": ["workflow-optimizer", "performance-benchmarker"]
+            },
+            {
+              "role": "studio-producer",
+              "name": "Studio Producer",
+              "level": 2,
+              "reportsTo": "project-management-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            }
+          ]
+        },
+        {
+          "name": "product",
+          "manager": {
+            "role": "product-manager",
+            "name": "Product Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "trend-researcher",
+              "name": "Trend Researcher",
+              "level": 2,
+              "reportsTo": "product-manager",
+              "testingConnections": ["test-results-analyzer", "workflow-optimizer"]
+            },
+            {
+              "role": "feedback-synthesizer",
+              "name": "Feedback Synthesizer",
+              "level": 2,
+              "reportsTo": "product-manager",
+              "testingConnections": ["tool-evaluator", "api-tester"]
+            },
+            {
+              "role": "sprint-prioritizer",
+              "name": "Sprint Prioritizer",
+              "level": 2,
+              "reportsTo": "product-manager",
+              "testingConnections": ["workflow-optimizer", "test-results-analyzer"]
+            }
+          ]
+        },
+        {
+          "name": "testing",
+          "manager": {
+            "role": "testing-manager",
+            "name": "Testing Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "tool-evaluator",
+              "name": "Tool Evaluator",
+              "level": 2,
+              "reportsTo": "testing-manager",
+              "testingConnections": []
+            },
+            {
+              "role": "api-tester",
+              "name": "API Tester",
+              "level": 2,
+              "reportsTo": "testing-manager",
+              "testingConnections": []
+            },
+            {
+              "role": "performance-benchmarker",
+              "name": "Performance Benchmarker",
+              "level": 2,
+              "reportsTo": "testing-manager",
+              "testingConnections": []
+            },
+            {
+              "role": "test-results-analyzer",
+              "name": "Test Results Analyzer",
+              "level": 2,
+              "reportsTo": "testing-manager",
+              "testingConnections": []
+            },
+            {
+              "role": "workflow-optimizer",
+              "name": "Workflow Optimizer",
+              "level": 2,
+              "reportsTo": "testing-manager",
+              "testingConnections": []
+            }
+          ]
+        },
+        {
+          "name": "marketing",
+          "manager": {
+            "role": "marketing-manager",
+            "name": "Marketing Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "tiktok-strategist",
+              "name": "TikTok Strategist",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            },
+            {
+              "role": "reddit-community-builder",
+              "name": "Reddit Community Builder",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["workflow-optimizer", "api-tester"]
+            },
+            {
+              "role": "content-creator",
+              "name": "Content Creator",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["performance-benchmarker", "test-results-analyzer"]
+            },
+            {
+              "role": "growth-hacker",
+              "name": "Growth Hacker",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            },
+            {
+              "role": "twitter-engager",
+              "name": "Twitter Engager",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["api-tester", "test-results-analyzer"]
+            },
+            {
+              "role": "app-store-optimizer",
+              "name": "App Store Optimizer",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["performance-benchmarker", "workflow-optimizer"]
+            },
+            {
+              "role": "instagram-curator",
+              "name": "Instagram Curator",
+              "level": 2,
+              "reportsTo": "marketing-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            }
+          ]
+        },
+        {
+          "name": "engineering",
+          "manager": {
+            "role": "engineering-manager",
+            "name": "Engineering Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "mobile-app-builder",
+              "name": "Mobile App Builder",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["performance-benchmarker", "api-tester"]
+            },
+            {
+              "role": "backend-architect",
+              "name": "Backend Architect",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["api-tester", "workflow-optimizer"]
+            },
+            {
+              "role": "rapid-prototyper",
+              "name": "Rapid Prototyper",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            },
+            {
+              "role": "ai-engineer",
+              "name": "AI Engineer",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["performance-benchmarker", "test-results-analyzer"]
+            },
+            {
+              "role": "devops-automator",
+              "name": "DevOps Automator",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["workflow-optimizer", "api-tester"]
+            },
+            {
+              "role": "frontend-developer",
+              "name": "Frontend Developer",
+              "level": 2,
+              "reportsTo": "engineering-manager",
+              "testingConnections": ["api-tester", "performance-benchmarker"]
+            }
+          ]
+        },
+        {
+          "name": "human-resources",
+          "manager": {
+            "role": "human-resources-manager",
+            "name": "HR Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "recruiter",
+              "name": "Recruiter",
+              "level": 2,
+              "reportsTo": "human-resources-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            },
+            {
+              "role": "employee-relations-specialist",
+              "name": "Employee Relations Specialist",
+              "level": 2,
+              "reportsTo": "human-resources-manager",
+              "testingConnections": ["test-results-analyzer", "workflow-optimizer"]
+            },
+            {
+              "role": "learning-and-development-coordinator",
+              "name": "L&D Coordinator",
+              "level": 2,
+              "reportsTo": "human-resources-manager",
+              "testingConnections": ["tool-evaluator", "performance-benchmarker"]
+            },
+            {
+              "role": "benefits-administrator",
+              "name": "Benefits Administrator",
+              "level": 2,
+              "reportsTo": "human-resources-manager",
+              "testingConnections": ["test-results-analyzer", "api-tester"]
+            }
+          ]
+        },
+        {
+          "name": "finance",
+          "manager": {
+            "role": "finance-manager",
+            "name": "Finance Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "accountant",
+              "name": "Accountant",
+              "level": 2,
+              "reportsTo": "finance-manager",
+              "testingConnections": ["tool-evaluator", "workflow-optimizer"]
+            },
+            {
+              "role": "financial-analyst",
+              "name": "Financial Analyst",
+              "level": 2,
+              "reportsTo": "finance-manager",
+              "testingConnections": ["test-results-analyzer", "performance-benchmarker"]
+            },
+            {
+              "role": "treasury-manager",
+              "name": "Treasury Manager",
+              "level": 2,
+              "reportsTo": "finance-manager",
+              "testingConnections": ["api-tester", "workflow-optimizer"]
+            }
+          ]
+        },
+        {
+          "name": "sales",
+          "manager": {
+            "role": "sales-manager",
+            "name": "Sales Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "sales-representative",
+              "name": "Sales Representative",
+              "level": 2,
+              "reportsTo": "sales-manager",
+              "testingConnections": ["tool-evaluator", "test-results-analyzer"]
+            },
+            {
+              "role": "sales-engineer",
+              "name": "Sales Engineer",
+              "level": 2,
+              "reportsTo": "sales-manager",
+              "testingConnections": ["api-tester", "performance-benchmarker"]
+            },
+            {
+              "role": "account-manager",
+              "name": "Account Manager",
+              "level": 2,
+              "reportsTo": "sales-manager",
+              "testingConnections": ["workflow-optimizer", "test-results-analyzer"]
+            }
+          ]
+        },
+        {
+          "name": "customer-success",
+          "manager": {
+            "role": "customer-success-manager",
+            "name": "Customer Success Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "customer-onboarding-specialist",
+              "name": "Onboarding Specialist",
+              "level": 2,
+              "reportsTo": "customer-success-manager",
+              "testingConnections": ["workflow-optimizer", "test-results-analyzer"]
+            },
+            {
+              "role": "customer-support-specialist",
+              "name": "Support Specialist",
+              "level": 2,
+              "reportsTo": "customer-success-manager",
+              "testingConnections": ["api-tester", "tool-evaluator"]
+            },
+            {
+              "role": "customer-advocate",
+              "name": "Customer Advocate",
+              "level": 2,
+              "reportsTo": "customer-success-manager",
+              "testingConnections": ["test-results-analyzer", "workflow-optimizer"]
+            }
+          ]
+        },
+        {
+          "name": "security",
+          "manager": {
+            "role": "security-manager",
+            "name": "Security Director",
+            "level": 1,
+            "reportsTo": "chief-executive-officer"
+          },
+          "agents": [
+            {
+              "role": "threat-analyst",
+              "name": "Threat Analyst",
+              "level": 2,
+              "reportsTo": "security-manager",
+              "testingConnections": ["tool-evaluator", "performance-benchmarker"]
+            },
+            {
+              "role": "compliance-auditor",
+              "name": "Compliance Auditor",
+              "level": 2,
+              "reportsTo": "security-manager",
+              "testingConnections": ["workflow-optimizer", "test-results-analyzer"]
+            },
+            {
+              "role": "incident-responder",
+              "name": "Incident Responder",
+              "level": 2,
+              "reportsTo": "security-manager",
+              "testingConnections": ["api-tester", "workflow-optimizer"]
+            }
+          ]
+        }
+      ]
+    }
+  }
+  

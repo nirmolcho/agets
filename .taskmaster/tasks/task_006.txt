@@ -47,3 +47,35 @@ CSS implementation:
 
 # Test Strategy:
 Test hover interactions across different devices and input methods. Verify that transitions are smooth and not jarring. Ensure actions are accessible via keyboard for users who don't use mouse hover.
+
+# Subtasks:
+## 1. Implement Card Border Highlight Effect on Hover [pending]
+### Dependencies: None
+### Description: Add CSS transitions to highlight agent card edges when users hover over them, creating a subtle glow or border change effect.
+### Details:
+Implement the CSS for the card border highlight effect by applying the transition properties to the agent-card class. Ensure the border changes from transparent to the primary color with a subtle box-shadow glow effect. Use CSS variables for color consistency and set appropriate transition timing (200ms) with ease-out easing for a smooth effect.
+
+## 2. Create Quick Action Buttons Reveal Animation [pending]
+### Dependencies: 6.1
+### Description: Implement the animation that reveals quick action buttons (Start/Stop/Error) when a user hovers over an agent card.
+### Details:
+Create the hover-actions container within the agent card component and implement the opacity transition. Set the default opacity to 0 and transition to opacity 1 on card hover. Use a slightly faster transition (150ms) with ease-in timing for the reveal effect. Position the action buttons appropriately within the container.
+
+## 3. Implement Button Hover and Active State Animations [pending]
+### Dependencies: 6.2
+### Description: Add visual feedback for button hover and active states to improve user interaction experience with the quick action buttons.
+### Details:
+Apply transform scale transitions to the action buttons to provide visual feedback. Use a subtle scale increase (1.05) on hover and a slight scale decrease (0.95) on active/click state. Set transition duration to 100ms for quick response. Ensure the transform origin is centered for balanced scaling.
+
+## 4. Ensure Keyboard Accessibility for Hover Actions [pending]
+### Dependencies: 6.2, 6.3
+### Description: Make sure all hover-based interactions are accessible via keyboard navigation for users who don't use mouse hover.
+### Details:
+Implement focus states that mirror hover states for keyboard navigation. Add tabindex attributes to ensure proper focus order. Use :focus and :focus-visible CSS selectors to apply the same visual effects as hover states. Ensure that the quick action buttons are accessible via keyboard and that their active states work with keyboard interaction (Enter/Space keys).
+
+## 5. Optimize Performance and Apply Final Polish [pending]
+### Dependencies: 6.1, 6.2, 6.3, 6.4
+### Description: Optimize the animations for performance and apply final polish to ensure smooth interactions across all devices and browsers.
+### Details:
+Review and optimize CSS transitions by using transform and opacity properties where possible instead of animating layout properties. Add will-change hints for elements that will animate frequently. Test and adjust transition timings for optimal feel. Add media queries to respect user preferences for reduced motion. Ensure all transitions are consistent across the component.
+

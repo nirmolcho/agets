@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Orchestration Studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app-root">
+      <div id="toolbar" class="toolbar">
+        <div class="toolbar-left">
+          <button id="btn-add-agent" class="btn btn-primary">Add Agent</button>
+          <button id="btn-export" class="btn btn-secondary">Export</button>
+          <button id="btn-dept-view" class="btn btn-secondary">Departments View</button>
+          <button id="btn-org-view" class="btn btn-secondary">Org View</button>
+          <button id="btn-reset-setup" class="btn btn-secondary" title="Clear setup and restart onboarding">Reset Setup</button>
+        </div>
+        <div class="toolbar-right">
+          <span class="legend">
+            <span class="status-dot status-active"></span> Active
+          </span>
+          <span class="legend">
+            <span class="status-dot status-idle"></span> Idle
+          </span>
+          <span class="legend">
+            <span class="status-dot status-error"></span> Error
+          </span>
+          <button id="btn-logout" class="btn btn-secondary" style="margin-left:12px;">Logout</button>
+        </div>
+      </div>
+
+      <div id="canvas-container" class="canvas-container">
+        <div id="stage" class="stage">
+          <svg id="connections" class="connections" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="cards-layer" class="cards-layer"></div>
+        </div>
+        <div class="zoom-controls">
+          <button id="btn-full-view" class="btn btn-secondary" title="Zoom to Full View">Full View</button>
+          <button id="btn-focus-view" class="btn btn-secondary" title="Zoom to Focus">Zoom In</button>
+          <button id="btn-reorganize" class="btn btn-secondary" title="Re-run layout and fit view">Reorganize</button>
+        </div>
+      </div>
+      <div id="detail-panel" class="detail-panel" aria-hidden="true"></div>
+      <div id="agent-backdrop" class="backdrop hidden" aria-hidden="true"></div>
+      <div id="overlay-panel" class="overlay-panel hidden" aria-hidden="true">
+        <div class="overlay-content" role="dialog" aria-modal="true"></div>
+      </div>
+      <div id="tooltip" class="tooltip hidden"></div>
+      <div id="welcome-overlay" class="welcome-overlay hidden" aria-hidden="true">
+        <div class="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+          <!-- Content injected by app.js -->
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+  </html>
+
+
+

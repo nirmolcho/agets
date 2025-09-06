@@ -1,4 +1,6 @@
 import { loadTheme, getTheme, styleDepartmentTag, styleConnectionsPath } from './theme.js';
+import { getSession, isAuthRequired, signOut, onAuthStateChange } from './auth.js';
+import { saveUserData, logUserActivity } from './telemetry.js';
 
 // Responsive layout parameters (tunable at runtime)
 let CARD_WIDTH = 300;
@@ -7,6 +9,7 @@ let GAP_X = 60;
 let GAP_Y = 140;
 
 const STATUS_VALUES = ['active', 'idle', 'error'];
+let ORG_DATA = null;
 
 /**
  * Maintains in-memory nodes and edges for current canvas
@@ -43,10 +46,60 @@ const state = {
 async function init() {
   await loadTheme();
 
+  // Auth gate: if required and not logged in, redirect to login
+  try {
+    if (isAuthRequired()) {
+      const { data } = await getSession();
+      if (!data?.session) {
+        window.location.href = '/';
+        return;
+      }
+      // Wire logout button
+      const logoutBtn = document.getElementById('btn-logout');
+      if (logoutBtn) logoutBtn.onclick = async () => {
+        try {
+          const uid = data?.session?.user?.id;
+          if (uid) await logUserActivity(uid, 'logout');
+        } finally {
+          await signOut();
+          window.location.href = '/';
+        }
+      };
+      // Keep session fresh and react to changes
+      onAuthStateChange((_event, session) => {
+        if (!session) window.location.href = '/';
+      });
+    }
+  } catch (_) {
+    // Non-fatal; continue without gating
+  }
+
+  // Reveal the app only after auth/theme checks complete
+  try { document.getElementById('app-root').style.visibility = 'visible'; } catch {}
+
   const orgRes = await fetch('/organization_tree.json');
   const org = await orgRes.json();
+  ORG_DATA = org;
 
-  buildGraphFromOrganization(org);
+  // Apply welcome setup or load persisted selections
+  let persisted = loadSetupSelections();
+  if (!persisted) {
+    const params = new URLSearchParams(location.search);
+    const autostart = params.get('autostart');
+    if (autostart === '1' || autostart === 'true') {
+      persisted = { departments: [], scope: 'managers', layout: 'org' };
+    }
+  }
+  if (!persisted) {
+    // True onboarding: hide canvas content and background grid until confirmed
+    const container = document.getElementById('canvas-container');
+    const stage = document.getElementById('stage');
+    container.classList.add('hidden-in-onboarding');
+    stage.classList.add('hidden-in-onboarding');
+    showWelcomeOverlay(org);
+  } else {
+    buildGraphFromOrganization(org, persisted);
+  }
   computeResponsiveLayoutParams();
   autoLayout();
   loadSessionPositions();
@@ -61,7 +114,7 @@ async function init() {
   startStatusTicker();
 }
 
-function buildGraphFromOrganization(org) {
+function buildGraphFromOrganization(org, setup) {
   state.nodes.clear();
   state.edges = [];
   state.testingEdges = [];
@@ -78,7 +131,10 @@ function buildGraphFromOrganization(org) {
     status: 'idle',
   });
 
+  const selectedDepts = new Set((setup?.departments || []).map(toDepartmentKey));
+  const scopeManagersOnly = setup?.scope === 'managers';
   for (const dept of org.organization.departments) {
+    if (setup && selectedDepts.size && !selectedDepts.has(toDepartmentKey(dept.name))) continue;
     const manager = dept.manager;
     const managerId = manager.role;
     state.nodes.set(managerId, {
@@ -93,6 +149,7 @@ function buildGraphFromOrganization(org) {
     // Edge: manager -> CEO
     state.edges.push({ fromId: managerId, toId: 'chief-executive-officer' });
 
+    if (scopeManagersOnly) continue;
     for (const agent of (dept.agents || [])) {
       const agentId = agent.role;
       state.nodes.set(agentId, {
@@ -113,6 +170,208 @@ function buildGraphFromOrganization(org) {
       }
     }
   }
+}
+
+// -------------------- Welcome Overlay (Guided Setup) --------------------
+const SETUP_KEY = 'aos_setup_v1';
+
+function loadSetupSelections() {
+  try {
+    const raw = sessionStorage.getItem(SETUP_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.departments) || !data.scope || !data.layout) return null;
+    // Apply layout mode early
+    state.mode = data.layout === 'departments' ? 'departments' : 'org';
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function saveSetupSelections(sel) {
+  try { sessionStorage.setItem(SETUP_KEY, JSON.stringify(sel)); } catch {}
+}
+
+function showWelcomeOverlay(org) {
+  const overlay = document.getElementById('welcome-overlay');
+  const modal = overlay.querySelector('.welcome-modal');
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  let step = 1;
+  const selections = { departments: [], scope: 'managers', layout: 'org' };
+
+  const depts = (org.organization.departments || []).map(d => ({ key: toDepartmentKey(d.name), name: formatDepartment(d.name) }));
+
+  function renderStep() {
+    modal.innerHTML = '';
+    if (step === 1) {
+      const header = document.createElement('div');
+      header.className = 'welcome-header';
+      header.innerHTML = `<div id="welcome-title" class="welcome-title">Which departments do you want to include?</div><div class="welcome-sub">Pick the teams you want to start with. You can change this later.</div>`;
+      const grid = document.createElement('div');
+      grid.className = 'welcome-grid';
+      for (const d of depts) {
+        const tile = document.createElement('div');
+        tile.className = 'welcome-tile';
+        const tag = document.createElement('span');
+        tag.className = 'dept-tag';
+        tag.textContent = d.name;
+        styleDepartmentTag(tag, d.key, getTheme());
+        const label = document.createElement('div');
+        label.className = 'subtle';
+        label.textContent = 'Department';
+        tile.append(tag, label);
+        const toggle = () => {
+          const idx = selections.departments.indexOf(d.key);
+          if (idx === -1) selections.departments.push(d.key); else selections.departments.splice(idx, 1);
+          tile.classList.toggle('selected', selections.departments.includes(d.key));
+        };
+        tile.onclick = toggle;
+        tile.classList.toggle('selected', selections.departments.includes(d.key));
+        grid.appendChild(tile);
+      }
+      const actions = document.createElement('div');
+      actions.className = 'welcome-actions';
+      const left = document.createElement('div');
+      const btnAll = document.createElement('button');
+      btnAll.className = 'btn btn-secondary';
+      btnAll.textContent = 'Select All';
+      btnAll.onclick = () => { selections.departments = depts.map(d => d.key); renderStep(); };
+      left.appendChild(btnAll);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const btnNext = document.createElement('button');
+      btnNext.className = 'btn btn-primary';
+      btnNext.textContent = 'Continue';
+      btnNext.onclick = () => { step = 2; renderStep(); };
+      right.appendChild(btnNext);
+      actions.append(left, right);
+      modal.append(header, grid, actions);
+    } else if (step === 2) {
+      const header = document.createElement('div');
+      header.className = 'welcome-header';
+      header.innerHTML = `<div id="welcome-title" class="welcome-title">Do you want to start with managers only, or all agents?</div><div class="welcome-sub">Choose how detailed you want your org view. You can add agents later.</div>`;
+      const radios = document.createElement('div');
+      radios.className = 'welcome-radio';
+      const r1 = document.createElement('label');
+      r1.innerHTML = `<input type="radio" name="scope" value="managers" ${selections.scope==='managers'?'checked':''}/> Managers only (lean start)`;
+      const r2 = document.createElement('label');
+      r2.innerHTML = `<input type="radio" name="scope" value="all" ${selections.scope==='all'?'checked':''}/> All agents (complete org)`;
+      radios.append(r1, r2);
+      radios.onchange = (e) => {
+        const target = e.target;
+        if (target && target.name === 'scope') selections.scope = target.value;
+      };
+      const actions = document.createElement('div');
+      actions.className = 'welcome-actions';
+      const left = document.createElement('div');
+      const btnBack = document.createElement('button');
+      btnBack.className = 'btn btn-secondary';
+      btnBack.textContent = 'Back';
+      btnBack.onclick = () => { step = 1; renderStep(); };
+      left.appendChild(btnBack);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const btnNext = document.createElement('button');
+      btnNext.className = 'btn btn-primary';
+      btnNext.textContent = 'Continue';
+      btnNext.onclick = () => { step = 3; renderStep(); };
+      right.appendChild(btnNext);
+      actions.append(left, right);
+      modal.append(header, radios, actions);
+    } else if (step === 3) {
+      const header = document.createElement('div');
+      header.className = 'welcome-header';
+      header.innerHTML = `<div id="welcome-title" class="welcome-title">How should we arrange your org view?</div><div class="welcome-sub">Pick a layout mode.</div>`;
+      const radios = document.createElement('div');
+      radios.className = 'welcome-radio';
+      const r1 = document.createElement('label');
+      r1.innerHTML = `<input type="radio" name="layout" value="org" ${selections.layout==='org'?'checked':''}/> Org Chart View`;
+      const r2 = document.createElement('label');
+      r2.innerHTML = `<input type="radio" name="layout" value="departments" ${selections.layout==='departments'?'checked':''}/> Department View`;
+      radios.append(r1, r2);
+      radios.onchange = (e) => { const t = e.target; if (t && t.name==='layout') selections.layout = t.value; };
+      const actions = document.createElement('div');
+      actions.className = 'welcome-actions';
+      const left = document.createElement('div');
+      const btnBack = document.createElement('button');
+      btnBack.className = 'btn btn-secondary';
+      btnBack.textContent = 'Back';
+      btnBack.onclick = () => { step = 2; renderStep(); };
+      left.appendChild(btnBack);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const btnNext = document.createElement('button');
+      btnNext.className = 'btn btn-primary';
+      btnNext.textContent = 'Continue';
+      btnNext.onclick = () => { step = 4; renderStep(); };
+      right.appendChild(btnNext);
+      actions.append(left, right);
+      modal.append(header, radios, actions);
+    } else if (step === 4) {
+      const header = document.createElement('div');
+      header.className = 'welcome-header';
+      header.innerHTML = `<div id="welcome-title" class="welcome-title">Confirm & Create</div><div class="welcome-sub">Review and create your org view.</div>`;
+      const summary = document.createElement('div');
+      summary.className = 'welcome-summary';
+      const deptList = selections.departments.length ? selections.departments.map(d => formatDepartment(d)).join(', ') : 'All departments';
+      summary.innerHTML = `
+        <div><strong>Departments:</strong> ${deptList}</div>
+        <div><strong>Scope:</strong> ${selections.scope === 'managers' ? 'Managers only' : 'All agents'}</div>
+        <div><strong>Layout:</strong> ${selections.layout === 'departments' ? 'Department View' : 'Org Chart View'}</div>
+      `;
+      const actions = document.createElement('div');
+      actions.className = 'welcome-actions';
+      const left = document.createElement('div');
+      const btnBack = document.createElement('button');
+      btnBack.className = 'btn btn-secondary';
+      btnBack.textContent = 'Back';
+      btnBack.onclick = () => { step = 3; renderStep(); };
+      left.appendChild(btnBack);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const btnCreate = document.createElement('button');
+      btnCreate.className = 'btn btn-primary';
+      btnCreate.textContent = 'Create My Org View';
+      btnCreate.onclick = () => {
+        // Persist and apply
+        saveSetupSelections(selections);
+        overlay.classList.add('hidden');
+        overlay.setAttribute('aria-hidden', 'true');
+        state.mode = selections.layout === 'departments' ? 'departments' : 'org';
+        // Reveal canvas
+        const container = document.getElementById('canvas-container');
+        const stage = document.getElementById('stage');
+        container.classList.remove('hidden-in-onboarding');
+        stage.classList.remove('hidden-in-onboarding');
+        // Rebuild graph and render accordingly
+        state.nodes.clear(); state.edges = []; state.testingEdges = [];
+        buildGraphFromOrganization(org, selections);
+        computeResponsiveLayoutParams();
+        autoLayout();
+        render();
+        zoomToFit();
+        showHintBar();
+      };
+      right.appendChild(btnCreate);
+      actions.append(left, right);
+      modal.append(header, summary, actions);
+    }
+  }
+
+  renderStep();
+}
+
+function showHintBar() {
+  const existing = document.querySelector('.hint-bar');
+  if (existing) existing.remove();
+  const hint = document.createElement('div');
+  hint.className = 'hint-bar';
+  hint.textContent = 'You can reorganize or add departments anytime using the toolbar.';
+  document.body.appendChild(hint);
+  setTimeout(() => { hint.remove(); }, 6000);
 }
 
 function autoLayout() {
@@ -244,12 +503,16 @@ function render() {
 
   if (state.mode === 'org') {
     // Render full org view
+    const cardsFrag = document.createDocumentFragment();
     for (const node of state.nodes.values()) {
       const card = createAgentCard(node, design);
-      cardsLayer.appendChild(card);
+      card.classList.add('fade-in-scale');
+      cardsFrag.appendChild(card);
     }
+    cardsLayer.appendChild(cardsFrag);
 
     // Hierarchy edges
+    const edgeFrag = document.createDocumentFragment();
     for (const edge of state.edges) {
       const from = state.nodes.get(edge.fromId);
       const to = state.nodes.get(edge.toId);
@@ -261,10 +524,13 @@ function render() {
       const d = curvedPath(start, end);
       path.setAttribute('d', d);
       styleConnectionsPath(path, design);
-      svg.appendChild(path);
+      path.classList.add('drawn');
+      edgeFrag.appendChild(path);
     }
+    svg.appendChild(edgeFrag);
 
     // Testing edges with distinct styling and tooltips
+    const testFrag = document.createDocumentFragment();
     for (const edge of state.testingEdges) {
       const from = state.nodes.get(edge.fromId);
       const to = state.nodes.get(edge.toId);
@@ -277,8 +543,10 @@ function render() {
       path.setAttribute('d', d);
       path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
       path.addEventListener('pointerleave', hideTooltip);
-      svg.appendChild(path);
+      path.classList.add('drawn');
+      testFrag.appendChild(path);
     }
+    svg.appendChild(testFrag);
   } else if (state.mode === 'departments') {
     renderDepartmentsView(cardsLayer, svg, design);
   }
@@ -293,7 +561,6 @@ function render() {
 }
 
 function curvedPath(start, end) {
-  const dx = (end.x - start.x) * 0.2;
   const c1 = `${start.x} ${start.y - GAP_Y / 2}`;
   const c2 = `${end.x} ${end.y + GAP_Y / 2}`;
   return `M ${start.x} ${start.y} C ${c1}, ${c2}, ${end.x} ${end.y}`;
@@ -500,18 +767,26 @@ function drawConnectionsOnly() {
 
 function wireToolbar() {
   const btnExport = document.getElementById('btn-export');
-  const btnImport = document.getElementById('btn-import');
-  const fileImport = document.getElementById('file-import');
   const btnAdd = document.getElementById('btn-add-agent');
   const btnDeptView = document.getElementById('btn-dept-view');
   const btnOrgView = document.getElementById('btn-org-view');
+  const btnResetSetup = document.getElementById('btn-reset-setup');
 
   btnExport.onclick = exportConfiguration;
-  btnImport.onclick = () => fileImport.click();
-  fileImport.onchange = importConfiguration;
   btnAdd.onclick = addAgentFlow;
   if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit(); };
   if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
+  if (btnResetSetup) btnResetSetup.onclick = () => {
+    try { sessionStorage.removeItem(SETUP_KEY); } catch {}
+    // Clear current graph and show onboarding again
+    state.nodes.clear(); state.edges = []; state.testingEdges = [];
+    render();
+    const container = document.getElementById('canvas-container');
+    const stage = document.getElementById('stage');
+    container.classList.add('hidden-in-onboarding');
+    stage.classList.add('hidden-in-onboarding');
+    showWelcomeOverlay(ORG_DATA);
+  };
 }
 
 function exportConfiguration() {
@@ -568,19 +843,45 @@ function addAgentFlow() {
     id, name, role, department, level: 2, x: manager.x, y: manager.y + CARD_HEIGHT + GAP_Y, status: 'idle', tasks: []
   });
   state.edges.push({ fromId: id, toId: manager.id });
+  const newId = id;
+  try { const uid = (await getSession()).data?.session?.user?.id; if (uid) await saveUserData(uid, { action: 'add_agent', agentId: newId, department }); } catch {}
   render();
 }
 
 function startStatusTicker() {
+  let tick = 0;
   setInterval(() => {
+    const changedIds = new Set();
     for (const node of state.nodes.values()) {
       // Randomly flip some statuses to simulate activity
       if (Math.random() < 0.08) {
         node.status = STATUS_VALUES[(STATUS_VALUES.indexOf(node.status) + 1) % STATUS_VALUES.length];
+        changedIds.add(node.id);
       }
     }
-    render();
+    // Lightweight update for status indicators to avoid full re-render each tick
+    if (changedIds.size > 0) updateStatusDots(changedIds);
+    // Periodically refresh to keep aggregates (like department counts) in sync
+    tick = (tick + 1) % 5;
+    if (tick === 0) render();
   }, 2000);
+}
+
+function updateStatusDots(changedIds) {
+  try {
+    const cards = document.querySelectorAll('.agent-card');
+    cards.forEach((card) => {
+      const id = card.dataset.id;
+      if (!id || (changedIds && !changedIds.has(id))) return;
+      const node = state.nodes.get(id);
+      if (!node) return;
+      const dot = card.querySelector('.status-dot');
+      if (!dot) return;
+      dot.classList.remove('status-active', 'status-idle', 'status-error');
+      dot.classList.add(`status-${node.status}`);
+      dot.title = node.status;
+    });
+  } catch {}
 }
 
 function toDepartmentKey(name) {
@@ -765,8 +1066,8 @@ function renderDetailPanel(agentId) {
   controlsBar.style.justifyContent = 'space-between';
   controlsBar.style.gap = '8px';
   const sortWrap = document.createElement('div');
-  sortWrap.className = 'subtle';
-  sortWrap.innerHTML = `Sort by: <select id="task-sort">
+  sortWrap.className = 'subtle sort-wrap';
+  sortWrap.innerHTML = `Sort by: <select id="task-sort" aria-label="Sort tasks">
       <option value="priority" ${((state.taskSort||'priority')==='priority')?'selected':''}>Priority</option>
       <option value="due" ${((state.taskSort||'priority')==='due')?'selected':''}>Due Date</option>
     </select>`;
@@ -1065,7 +1366,9 @@ function renderDepartmentsView(cardsLayer, svg, design) {
     deptCards.push(card);
   });
 
-  for (const c of deptCards) cardsLayer.appendChild(c);
+  const frag = document.createDocumentFragment();
+  for (const c of deptCards) frag.appendChild(c);
+  cardsLayer.appendChild(frag);
 }
 
 function createDepartmentCard(dept, x, y, design) {
@@ -1434,6 +1737,7 @@ function renderDepartmentOrgView() {
 
   // Place layout using existing coordinates but only render visible nodes/edges
   const design = getTheme();
+  const cardFrag = document.createDocumentFragment();
   for (const id of visible) {
     const node = state.nodes.get(id);
     if (!node) continue;
@@ -1446,10 +1750,12 @@ function renderDepartmentOrgView() {
         card.style.outline = '2px solid #60a5fa';
       }
     }
-    cardsLayer.appendChild(card);
+    cardFrag.appendChild(card);
   }
+  cardsLayer.appendChild(cardFrag);
 
   // Hierarchy edges within visible
+  const edgeFrag = document.createDocumentFragment();
   for (const edge of state.edges) {
     if (!visible.has(edge.fromId) || !visible.has(edge.toId)) continue;
     const from = state.nodes.get(edge.fromId);
@@ -1461,10 +1767,12 @@ function renderDepartmentOrgView() {
     const end = { x: to.x + CARD_WIDTH / 2, y: to.y + CARD_HEIGHT };
     path.setAttribute('d', curvedPath(start, end));
     styleConnectionsPath(path, getTheme());
-    svg.appendChild(path);
+    edgeFrag.appendChild(path);
   }
+  svg.appendChild(edgeFrag);
 
   // Testing edges where at least one end is visible (so we can show external connectors)
+  const testFrag = document.createDocumentFragment();
   for (const edge of state.testingEdges) {
     if (!visible.has(edge.fromId) && !visible.has(edge.toId)) continue;
     const from = state.nodes.get(edge.fromId);
@@ -1477,8 +1785,9 @@ function renderDepartmentOrgView() {
     path.setAttribute('d', curvedPath(start, end));
     path.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, `Testing Connection: ${from.name} → ${to.name}`));
     path.addEventListener('pointerleave', hideTooltip);
-    svg.appendChild(path);
+    testFrag.appendChild(path);
   }
+  svg.appendChild(testFrag);
 }
 
 function toggleAgentTab(agentId) {
