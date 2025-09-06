@@ -58,7 +58,7 @@ try {
 // Ensure welcome overlay is visible immediately on first load before any async work
 try {
   const hasSetup = (() => {
-    try { return !!sessionStorage.getItem('aos_setup_v1'); } catch { return false; }
+    try { return !!localStorage.getItem('aos_setup_v1'); } catch { return false; }
   })();
   const hasAutostart = (() => {
     try {
@@ -403,7 +403,7 @@ const SETUP_KEY = 'aos_setup_v1';
 
 function loadSetupSelections() {
   try {
-    const raw = sessionStorage.getItem(SETUP_KEY);
+    const raw = localStorage.getItem(SETUP_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || !Array.isArray(data.departments) || !data.scope || !data.layout) return null;
@@ -416,7 +416,7 @@ function loadSetupSelections() {
 }
 
 function saveSetupSelections(sel) {
-  try { sessionStorage.setItem(SETUP_KEY, JSON.stringify(sel)); } catch {}
+  try { localStorage.setItem(SETUP_KEY, JSON.stringify(sel)); } catch {}
 }
 
 function showWelcomeOverlay(org) {
@@ -1010,7 +1010,7 @@ function wireToolbar() {
   if (btnDeptView) btnDeptView.onclick = () => { state.mode = 'departments'; state.activeDepartment = null; computeResponsiveLayoutParams(); applySavedPositions(); render(); zoomToFit(); };
   if (btnOrgView) btnOrgView.onclick = () => { state.mode = 'org'; state.activeDepartment = null; computeResponsiveLayoutParams(); autoLayout(); applySavedPositions(); render(); zoomToFit(); };
   if (btnResetSetup) btnResetSetup.onclick = () => {
-    try { sessionStorage.removeItem(SETUP_KEY); } catch {}
+    try { localStorage.removeItem(SETUP_KEY); } catch {}
     // Clear current graph and show onboarding again
     state.nodes.clear(); state.edges = []; state.testingEdges = [];
     render();
