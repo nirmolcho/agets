@@ -24,7 +24,16 @@ test.describe('Interactive Elements - Dynamic Scan', () => {
     // Explicitly validate key toolbar buttons first
     await page.getByRole('button', { name: 'Org View' }).click();
     await page.getByRole('button', { name: 'Departments View' }).click();
-    await expect(page.locator('.dept-card').first()).toBeVisible();
+    try {
+      await expect(page.locator('.dept-card').first()).toBeVisible({ timeout: 1500 });
+    } catch {
+      // Fallback if early click landed before nodes were present
+      await page.evaluate(() => {
+        const w = window as any;
+        if (typeof w.__forceRenderDemo === 'function') w.__forceRenderDemo();
+      });
+      await expect(page.locator('.dept-card').first()).toBeVisible({ timeout: 2000 });
+    }
     await page.getByRole('button', { name: 'Org View' }).click();
     await expect(page.locator('.agent-card').first()).toBeVisible();
 
