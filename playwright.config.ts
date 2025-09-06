@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',
-    env: { VITE_REQUIRE_AUTH: 'false' },
+    env: { VITE_REQUIRE_AUTH: 'false', VITE_E2E: 'true' },
     reuseExistingServer: true,
     timeout: 60_000,
   },

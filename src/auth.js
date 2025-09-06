@@ -29,6 +29,8 @@ export function getSupabase() {
 }
 
 export function isAuthRequired() {
+  const e2e = String(import.meta.env.VITE_E2E ?? '').toLowerCase();
+  if (e2e === 'true' || e2e === '1') return false;
   const raw = String(import.meta.env.VITE_REQUIRE_AUTH ?? '').toLowerCase();
   // Default to requiring auth when not explicitly disabled
   if (!raw) return true;
