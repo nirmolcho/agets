@@ -1,0 +1,37 @@
+# Task ID: 4
+# Title: Implement Dark Theme with Proper Contrast
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Polish the dark theme to ensure consistent contrast ratios that meet WCAG 3.0 standards (minimum 4.5:1 for text).
+# Details:
+Implement a refined dark theme that:
+- Uses appropriate background colors that reduce eye strain
+- Ensures text elements maintain minimum 4.5:1 contrast ratio
+- Applies consistent color usage across all components
+- Avoids pure black (#000) in favor of dark grays for better readability
+- Properly handles borders and dividers in dark mode
+
+CSS implementation:
+```css
+:root {
+  --dark-bg-primary: #121212;
+  --dark-bg-secondary: #1e1e1e;
+  --dark-text-primary: rgba(255, 255, 255, 0.87);
+  --dark-text-secondary: rgba(255, 255, 255, 0.6);
+  --dark-border: rgba(255, 255, 255, 0.12);
+}
+
+.dark-theme {
+  background-color: var(--dark-bg-primary);
+  color: var(--dark-text-primary);
+}
+
+.dark-theme .card {
+  background-color: var(--dark-bg-secondary);
+  border: 1px solid var(--dark-border);
+}
+```
+
+# Test Strategy:
+Use contrast checking tools to verify all text meets WCAG 3.0 standards. Test the theme across different screen brightness levels and environments. Conduct user testing to ensure readability and comfort for extended use periods.

@@ -1,0 +1,174 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Establish Design System Foundation",
+        "description": "Create a comprehensive design system with tokens for colors, typography, spacing, and icons as specified in the PRD.",
+        "details": "Define and implement the following design tokens:\n- Colors: Create a palette for status states (active/idle/error), backgrounds, overlays, and department tags\n- Typography: Define hierarchy for titles, body text, and tags with appropriate weights (medium for department names, regular for agent roles)\n- Spacing: Standardize card padding, line height, and grid spacing\n- Icons: Design or select a consistent icon set for status indicators and departments\n\nEnsure all color choices meet WCAG 3.0 minimum contrast ratio of 4.5:1 for text. Document the design system in a way that can be referenced by all developers working on the project.",
+        "testStrategy": "Validate the design system by creating sample components with the defined tokens. Verify contrast ratios using accessibility tools. Review with stakeholders to ensure alignment with brand guidelines and PRD requirements.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Visual Hierarchy for Organization Chart",
+        "description": "Enhance the visual hierarchy to make CEO → Departments → Managers → Agents instantly scannable.",
+        "details": "Modify the organization chart layout to:\n- Use consistent spacing between hierarchy levels\n- Apply proper indentation for subordinate elements\n- Differentiate line weights for solid vs. dashed connections\n- Implement subtle grid/guide backgrounds to help with orientation during navigation\n- Ensure proper alignment of elements at each hierarchy level\n\nCSS implementation should include:\n```css\n.org-chart {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n  gap: var(--spacing-md);\n}\n\n.hierarchy-level-1 { margin-left: 0; }\n.hierarchy-level-2 { margin-left: var(--spacing-lg); }\n/* Continue for additional levels */\n\n.connection-line-solid {\n  border-width: 2px;\n  border-style: solid;\n}\n\n.connection-line-dashed {\n  border-width: 1px;\n  border-style: dashed;\n}\n```",
+        "testStrategy": "Test the visual hierarchy with different organizational structures to ensure it scales appropriately. Conduct user testing to verify that the hierarchy is instantly scannable. Verify proper rendering across different screen sizes and zoom levels.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Redesign Agent Cards for Reduced Density",
+        "description": "Reduce text clutter on agent cards by showing only essential information at a glance and moving extended details to the side panel.",
+        "details": "Redesign agent cards to:\n- Display only role, status, and department tag at a glance\n- Create a clean, minimal design that reduces cognitive load\n- Implement a consistent card structure with proper spacing\n- Add hover states that highlight card edges\n- Ensure cards maintain readability at different zoom levels\n\nComponent structure:\n```jsx\nconst AgentCard = ({ agent }) => (\n  <div className=\"agent-card\">\n    <div className=\"agent-card__header\">\n      <span className=\"agent-role\">{agent.role}</span>\n      <StatusIndicator status={agent.status} />\n    </div>\n    <div className=\"agent-card__body\">\n      <DepartmentTag department={agent.department} />\n    </div>\n    <div className=\"agent-card__hover-actions\">\n      <ActionButton type=\"start\" />\n      <ActionButton type=\"stop\" />\n      <ActionButton type=\"error\" />\n    </div>\n  </div>\n);\n```",
+        "testStrategy": "Conduct usability testing to ensure users can quickly identify key information on cards. Verify that the design works across different screen sizes and densities. Test hover interactions to ensure they're intuitive and accessible.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Dark Theme with Proper Contrast",
+        "description": "Polish the dark theme to ensure consistent contrast ratios that meet WCAG 3.0 standards (minimum 4.5:1 for text).",
+        "details": "Implement a refined dark theme that:\n- Uses appropriate background colors that reduce eye strain\n- Ensures text elements maintain minimum 4.5:1 contrast ratio\n- Applies consistent color usage across all components\n- Avoids pure black (#000) in favor of dark grays for better readability\n- Properly handles borders and dividers in dark mode\n\nCSS implementation:\n```css\n:root {\n  --dark-bg-primary: #121212;\n  --dark-bg-secondary: #1e1e1e;\n  --dark-text-primary: rgba(255, 255, 255, 0.87);\n  --dark-text-secondary: rgba(255, 255, 255, 0.6);\n  --dark-border: rgba(255, 255, 255, 0.12);\n}\n\n.dark-theme {\n  background-color: var(--dark-bg-primary);\n  color: var(--dark-text-primary);\n}\n\n.dark-theme .card {\n  background-color: var(--dark-bg-secondary);\n  border: 1px solid var(--dark-border);\n}\n```",
+        "testStrategy": "Use contrast checking tools to verify all text meets WCAG 3.0 standards. Test the theme across different screen brightness levels and environments. Conduct user testing to ensure readability and comfort for extended use periods.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Status Indicators with Color and Icons",
+        "description": "Create status indicators that use both color and icon (not color alone) for active/idle/error states, with subtle animations for real-time feel.",
+        "details": "Design and implement status indicators that:\n- Combine appropriate colors with distinct icons for each state\n- Include subtle animations (pulse for active, slow blink for error)\n- Ensure accessibility by not relying on color alone\n- Maintain consistency across all instances\n\nComponent implementation:\n```jsx\nconst StatusIndicator = ({ status }) => {\n  const getStatusDetails = () => {\n    switch(status) {\n      case 'active':\n        return { icon: 'check-circle', color: 'var(--color-success)', animation: 'pulse' };\n      case 'idle':\n        return { icon: 'pause-circle', color: 'var(--color-warning)', animation: 'none' };\n      case 'error':\n        return { icon: 'alert-circle', color: 'var(--color-error)', animation: 'blink' };\n      default:\n        return { icon: 'help-circle', color: 'var(--color-neutral)', animation: 'none' };\n    }\n  };\n  \n  const { icon, color, animation } = getStatusDetails();\n  \n  return (\n    <div className={`status-indicator ${animation}`} style={{ color }}>\n      <Icon name={icon} />\n      <span className=\"status-text\">{status}</span>\n    </div>\n  );\n};\n```",
+        "testStrategy": "Test with screen readers to ensure status is properly announced. Verify animations don't trigger vestibular disorders. Test with color blindness simulators to ensure states are distinguishable without color.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Microinteractions for Agent Cards",
+        "description": "Add hover interactions to highlight card edges and show quick actions (Start/Stop/Error) for improved user experience.",
+        "details": "Implement microinteractions that:\n- Highlight card edges on hover with a subtle glow or border change\n- Reveal quick action buttons on hover\n- Include subtle transitions (150-200ms) for smooth state changes\n- Provide visual feedback on button hover/active states\n\nCSS implementation:\n```css\n.agent-card {\n  transition: all 200ms ease-out;\n  border: 1px solid transparent;\n}\n\n.agent-card:hover {\n  border-color: var(--color-primary);\n  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.2);\n}\n\n.agent-card__hover-actions {\n  opacity: 0;\n  transition: opacity 150ms ease-in;\n}\n\n.agent-card:hover .agent-card__hover-actions {\n  opacity: 1;\n}\n\n.action-button {\n  transition: transform 100ms ease;\n}\n\n.action-button:hover {\n  transform: scale(1.05);\n}\n\n.action-button:active {\n  transform: scale(0.95);\n}\n```",
+        "testStrategy": "Test hover interactions across different devices and input methods. Verify that transitions are smooth and not jarring. Ensure actions are accessible via keyboard for users who don't use mouse hover.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Animated Transitions for Reorganization",
+        "description": "Create smooth animations for reorganization actions to help users maintain spatial context during changes.",
+        "details": "Implement animations that:\n- Smoothly transition cards from old to new positions\n- Use appropriate easing functions for natural movement\n- Keep duration short enough to not impede workflow (300-500ms)\n- Include subtle scaling or opacity changes to enhance the effect\n\nImplementation approach:\n```javascript\nfunction animateReorganization(elements, newPositions) {\n  // Store original positions\n  const originalPositions = elements.map(el => {\n    const rect = el.getBoundingClientRect();\n    return { top: rect.top, left: rect.left };\n  });\n  \n  // Apply new organization structure in DOM\n  applyNewOrganization(elements, newPositions);\n  \n  // For each element, animate from original to new position\n  elements.forEach((el, index) => {\n    const newRect = el.getBoundingClientRect();\n    const deltaX = originalPositions[index].left - newRect.left;\n    const deltaY = originalPositions[index].top - newRect.top;\n    \n    // Set initial position\n    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;\n    el.style.transition = 'none';\n    \n    // Force reflow\n    el.offsetHeight;\n    \n    // Animate to new position\n    el.style.transform = '';\n    el.style.transition = 'transform 400ms cubic-bezier(0.2, 0, 0.2, 1)';\n  });\n}\n```",
+        "testStrategy": "Test animations with various reorganization scenarios to ensure smooth transitions. Verify performance on lower-end devices. Ensure animations respect user preferences for reduced motion.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Enhance Task Panel with Prioritization and Sorting",
+        "description": "Improve the task panel with chips/tags for priority, sorting options, and a collapsible layout for long task lists.",
+        "details": "Implement task panel enhancements:\n- Add color-coded priority chips/tags (high: red, medium: yellow, low: blue)\n- Create sorting controls with clear affordances for different sort options (due date, priority, status)\n- Implement collapsible sections for long task lists that expand on click\n- Ensure consistent styling with the rest of the application\n\nComponent structure:\n```jsx\nconst TaskPanel = ({ tasks }) => {\n  const [sortBy, setSortBy] = useState('dueDate');\n  const [expandedSections, setExpandedSections] = useState([]);\n  \n  const sortedTasks = useMemo(() => {\n    return sortTasks(tasks, sortBy);\n  }, [tasks, sortBy]);\n  \n  const tasksBySection = groupTasksBySection(sortedTasks);\n  \n  return (\n    <div className=\"task-panel\">\n      <div className=\"task-panel__header\">\n        <h2>Tasks</h2>\n        <div className=\"sort-controls\">\n          <label>Sort by:</label>\n          <select value={sortBy} onChange={e => setSortBy(e.target.value)}>\n            <option value=\"dueDate\">Due Date</option>\n            <option value=\"priority\">Priority</option>\n            <option value=\"status\">Status</option>\n          </select>\n        </div>\n      </div>\n      \n      {Object.entries(tasksBySection).map(([section, sectionTasks]) => (\n        <TaskSection \n          key={section}\n          title={section}\n          tasks={sectionTasks}\n          isExpanded={expandedSections.includes(section)}\n          onToggle={() => toggleSection(section)}\n        />\n      ))}\n    </div>\n  );\n};\n```",
+        "testStrategy": "Test with various task list lengths to ensure the collapsible sections work properly. Verify sorting functionality works correctly for all sort options. Test with keyboard navigation to ensure accessibility.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Department Overlay with Consistent Styling",
+        "description": "Create a department overlay that matches card styling with the main view but uses a simplified tile grid layout.",
+        "details": "Implement a department overlay that:\n- Uses consistent card styling with the main view\n- Arranges department items in a simplified tile grid\n- Dims the background org view when open to reduce distraction\n- Includes smooth transitions for opening/closing\n- Maintains proper spacing and alignment\n\nImplementation approach:\n```jsx\nconst DepartmentOverlay = ({ isOpen, department, onClose }) => {\n  if (!isOpen) return null;\n  \n  return (\n    <div className=\"department-overlay\">\n      <div className=\"department-overlay__backdrop\" onClick={onClose}></div>\n      <div className=\"department-overlay__content\">\n        <div className=\"department-overlay__header\">\n          <h2>{department.name}</h2>\n          <button className=\"close-button\" onClick={onClose}>\n            <Icon name=\"close\" />\n          </button>\n        </div>\n        \n        <div className=\"department-overlay__grid\">\n          {department.agents.map(agent => (\n            <AgentCard \n              key={agent.id}\n              agent={agent}\n              simplified={true}\n            />\n          ))}\n        </div>\n      </div>\n    </div>\n  );\n};\n\n// CSS\n.department-overlay {\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 100;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.department-overlay__backdrop {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background-color: rgba(0, 0, 0, 0.5);\n  backdrop-filter: blur(2px);\n}\n\n.department-overlay__content {\n  position: relative;\n  background-color: var(--bg-surface);\n  border-radius: var(--border-radius-lg);\n  padding: var(--spacing-lg);\n  width: 80%;\n  max-width: 1200px;\n  max-height: 80vh;\n  overflow-y: auto;\n}\n\n.department-overlay__grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));\n  gap: var(--spacing-md);\n  margin-top: var(--spacing-md);\n}\n```",
+        "testStrategy": "Test the overlay with various department sizes to ensure the grid layout adapts appropriately. Verify focus management when opening/closing the overlay. Test backdrop interaction to ensure it properly dims the background and responds to clicks.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement UX Writing Guidelines",
+        "description": "Apply content heuristics to ensure plain language for statuses, concise button labels, and consistency across all UI elements.",
+        "details": "Implement UX writing improvements:\n- Audit and update all status messages to use plain language (e.g., \"Paused\" instead of \"Idle\")\n- Standardize button labels to be concise and action-oriented (e.g., \"Add Agent\", \"Export JSON\")\n- Create a terminology glossary to ensure consistency (e.g., always use \"Department\" not \"Dept\")\n- Review error messages to ensure they're helpful and actionable\n- Apply consistent capitalization and punctuation rules\n\nImplementation approach:\n```javascript\n// Create a centralized content dictionary\nconst contentDictionary = {\n  statuses: {\n    active: 'Active',\n    idle: 'Paused',  // Changed from \"Idle\" to \"Paused\"\n    error: 'Error'\n  },\n  actions: {\n    add: 'Add Agent',\n    remove: 'Remove',\n    export: 'Export JSON',\n    import: 'Import JSON'\n  },\n  entities: {\n    department: 'Department',  // Never \"Dept\"\n    agent: 'Agent',\n    task: 'Task'\n  },\n  errors: {\n    connectionFailed: 'Connection failed. Please try again.',\n    invalidData: 'Invalid data format. Please check and retry.'\n  }\n};\n\n// Use this dictionary throughout the application\nfunction getContent(category, key) {\n  return contentDictionary[category]?.[key] || key;\n}\n```",
+        "testStrategy": "Review all UI text for compliance with the content guidelines. Test with users to ensure terminology is clear and understandable. Verify consistency across different parts of the application.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Keyboard Navigation and Screen Reader Support",
+        "description": "Ensure proper keyboard navigation through cards, overlays, and panels, and add screen reader support for accessibility.",
+        "details": "Implement accessibility improvements:\n- Set up proper tab order through all interactive elements\n- Add appropriate ARIA attributes to components\n- Ensure each agent card announces name, role, department, and status to screen readers\n- Implement keyboard shortcuts for common actions\n- Add focus indicators that are visible and meet accessibility standards\n\nImplementation approach:\n```jsx\n// Example of accessible agent card\nconst AccessibleAgentCard = ({ agent }) => {\n  return (\n    <div \n      className=\"agent-card\" \n      tabIndex=\"0\"\n      role=\"button\"\n      aria-label={`${agent.name}, ${agent.role}, ${agent.department}, Status: ${agent.status}`}\n      onKeyDown={(e) => {\n        if (e.key === 'Enter' || e.key === ' ') {\n          // Handle selection/activation\n          selectAgent(agent);\n        }\n      }}\n    >\n      {/* Card content */}\n    </div>\n  );\n};\n\n// Focus trap for modals/overlays\nfunction setupFocusTrap(containerRef) {\n  const focusableElements = containerRef.current.querySelectorAll(\n    'button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])'\n  );\n  \n  const firstElement = focusableElements[0];\n  const lastElement = focusableElements[focusableElements.length - 1];\n  \n  // Focus first element when opened\n  firstElement.focus();\n  \n  // Handle tab key to trap focus\n  containerRef.current.addEventListener('keydown', (e) => {\n    if (e.key === 'Tab') {\n      if (e.shiftKey && document.activeElement === firstElement) {\n        e.preventDefault();\n        lastElement.focus();\n      } else if (!e.shiftKey && document.activeElement === lastElement) {\n        e.preventDefault();\n        firstElement.focus();\n      }\n    }\n  });\n}\n```",
+        "testStrategy": "Test with keyboard-only navigation to ensure all functionality is accessible. Use screen readers to verify proper announcements. Validate against WCAG 2.1 AA standards using automated and manual testing.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement Zoom and Pan Navigation with Orientation Cues",
+        "description": "Add subtle grid/guide backgrounds to help with orientation during zoom and pan navigation.",
+        "details": "Implement zoom and pan navigation features:\n- Add a subtle grid background that scales appropriately with zoom level\n- Implement smooth zoom in/out functionality with mouse wheel and buttons\n- Create intuitive pan navigation when dragging the background\n- Add a mini-map or navigator in a corner for orientation in large charts\n- Include visual cues for the current zoom level and position\n\nImplementation approach:\n```javascript\nclass ZoomPanManager {\n  constructor(container, content) {\n    this.container = container;\n    this.content = content;\n    this.scale = 1;\n    this.translateX = 0;\n    this.translateY = 0;\n    this.isDragging = false;\n    this.lastMouseX = 0;\n    this.lastMouseY = 0;\n    \n    this.setupEventListeners();\n    this.updateTransform();\n  }\n  \n  setupEventListeners() {\n    // Zoom with mouse wheel\n    this.container.addEventListener('wheel', (e) => {\n      e.preventDefault();\n      const delta = e.deltaY > 0 ? -0.1 : 0.1;\n      this.zoom(delta, e.clientX, e.clientY);\n    });\n    \n    // Pan with mouse drag\n    this.container.addEventListener('mousedown', (e) => {\n      if (e.target === this.container || e.target.classList.contains('background-grid')) {\n        this.startDrag(e.clientX, e.clientY);\n      }\n    });\n    \n    document.addEventListener('mousemove', (e) => {\n      if (this.isDragging) {\n        this.drag(e.clientX, e.clientY);\n      }\n    });\n    \n    document.addEventListener('mouseup', () => {\n      this.stopDrag();\n    });\n  }\n  \n  zoom(delta, mouseX, mouseY) {\n    // Calculate mouse position relative to content\n    const rect = this.container.getBoundingClientRect();\n    const offsetX = mouseX - rect.left;\n    const offsetY = mouseY - rect.top;\n    \n    // Calculate cursor position in content space\n    const contentX = (offsetX - this.translateX) / this.scale;\n    const contentY = (offsetY - this.translateY) / this.scale;\n    \n    // Apply zoom\n    const newScale = Math.max(0.5, Math.min(3, this.scale + delta));\n    \n    // Adjust translation to zoom toward cursor position\n    this.translateX = offsetX - contentX * newScale;\n    this.translateY = offsetY - contentY * newScale;\n    this.scale = newScale;\n    \n    this.updateTransform();\n  }\n  \n  startDrag(mouseX, mouseY) {\n    this.isDragging = true;\n    this.lastMouseX = mouseX;\n    this.lastMouseY = mouseY;\n    this.container.style.cursor = 'grabbing';\n  }\n  \n  drag(mouseX, mouseY) {\n    if (!this.isDragging) return;\n    \n    const dx = mouseX - this.lastMouseX;\n    const dy = mouseY - this.lastMouseY;\n    \n    this.translateX += dx;\n    this.translateY += dy;\n    \n    this.lastMouseX = mouseX;\n    this.lastMouseY = mouseY;\n    \n    this.updateTransform();\n  }\n  \n  stopDrag() {\n    this.isDragging = false;\n    this.container.style.cursor = 'default';\n  }\n  \n  updateTransform() {\n    this.content.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;\n    \n    // Update grid visibility based on zoom level\n    const gridElements = document.querySelectorAll('.grid-line');\n    gridElements.forEach(el => {\n      if (this.scale < 0.8) {\n        el.style.opacity = '0.3';\n      } else {\n        el.style.opacity = '0.1';\n      }\n    });\n  }\n}\n\n// Create background grid\nfunction createBackgroundGrid(container) {\n  const grid = document.createElement('div');\n  grid.className = 'background-grid';\n  \n  // Create horizontal lines\n  for (let i = 0; i < 50; i++) {\n    const line = document.createElement('div');\n    line.className = 'grid-line horizontal';\n    line.style.top = `${i * 50}px`;\n    grid.appendChild(line);\n  }\n  \n  // Create vertical lines\n  for (let i = 0; i < 50; i++) {\n    const line = document.createElement('div');\n    line.className = 'grid-line vertical';\n    line.style.left = `${i * 50}px`;\n    grid.appendChild(line);\n  }\n  \n  container.appendChild(grid);\n}\n```",
+        "testStrategy": "Test zoom and pan functionality across different devices and input methods. Verify that the grid provides proper orientation cues at various zoom levels. Test with large organizational charts to ensure navigation remains intuitive.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-06T13:33:26.377Z",
+      "updated": "2025-09-06T13:33:26.377Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

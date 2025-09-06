@@ -1,0 +1,88 @@
+# Task ID: 9
+# Title: Implement Department Overlay with Consistent Styling
+# Status: pending
+# Dependencies: 1, 3
+# Priority: medium
+# Description: Create a department overlay that matches card styling with the main view but uses a simplified tile grid layout.
+# Details:
+Implement a department overlay that:
+- Uses consistent card styling with the main view
+- Arranges department items in a simplified tile grid
+- Dims the background org view when open to reduce distraction
+- Includes smooth transitions for opening/closing
+- Maintains proper spacing and alignment
+
+Implementation approach:
+```jsx
+const DepartmentOverlay = ({ isOpen, department, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="department-overlay">
+      <div className="department-overlay__backdrop" onClick={onClose}></div>
+      <div className="department-overlay__content">
+        <div className="department-overlay__header">
+          <h2>{department.name}</h2>
+          <button className="close-button" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        </div>
+        
+        <div className="department-overlay__grid">
+          {department.agents.map(agent => (
+            <AgentCard 
+              key={agent.id}
+              agent={agent}
+              simplified={true}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// CSS
+.department-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.department-overlay__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.department-overlay__content {
+  position: relative;
+  background-color: var(--bg-surface);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  width: 80%;
+  max-width: 1200px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.department-overlay__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+```
+
+# Test Strategy:
+Test the overlay with various department sizes to ensure the grid layout adapts appropriately. Verify focus management when opening/closing the overlay. Test backdrop interaction to ensure it properly dims the background and responds to clicks.

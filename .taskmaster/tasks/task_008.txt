@@ -1,0 +1,55 @@
+# Task ID: 8
+# Title: Enhance Task Panel with Prioritization and Sorting
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Improve the task panel with chips/tags for priority, sorting options, and a collapsible layout for long task lists.
+# Details:
+Implement task panel enhancements:
+- Add color-coded priority chips/tags (high: red, medium: yellow, low: blue)
+- Create sorting controls with clear affordances for different sort options (due date, priority, status)
+- Implement collapsible sections for long task lists that expand on click
+- Ensure consistent styling with the rest of the application
+
+Component structure:
+```jsx
+const TaskPanel = ({ tasks }) => {
+  const [sortBy, setSortBy] = useState('dueDate');
+  const [expandedSections, setExpandedSections] = useState([]);
+  
+  const sortedTasks = useMemo(() => {
+    return sortTasks(tasks, sortBy);
+  }, [tasks, sortBy]);
+  
+  const tasksBySection = groupTasksBySection(sortedTasks);
+  
+  return (
+    <div className="task-panel">
+      <div className="task-panel__header">
+        <h2>Tasks</h2>
+        <div className="sort-controls">
+          <label>Sort by:</label>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value="dueDate">Due Date</option>
+            <option value="priority">Priority</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+      
+      {Object.entries(tasksBySection).map(([section, sectionTasks]) => (
+        <TaskSection 
+          key={section}
+          title={section}
+          tasks={sectionTasks}
+          isExpanded={expandedSections.includes(section)}
+          onToggle={() => toggleSection(section)}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+# Test Strategy:
+Test with various task list lengths to ensure the collapsible sections work properly. Verify sorting functionality works correctly for all sort options. Test with keyboard navigation to ensure accessibility.

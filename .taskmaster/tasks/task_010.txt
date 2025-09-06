@@ -1,0 +1,48 @@
+# Task ID: 10
+# Title: Implement UX Writing Guidelines
+# Status: pending
+# Dependencies: 3, 5, 8, 9
+# Priority: medium
+# Description: Apply content heuristics to ensure plain language for statuses, concise button labels, and consistency across all UI elements.
+# Details:
+Implement UX writing improvements:
+- Audit and update all status messages to use plain language (e.g., "Paused" instead of "Idle")
+- Standardize button labels to be concise and action-oriented (e.g., "Add Agent", "Export JSON")
+- Create a terminology glossary to ensure consistency (e.g., always use "Department" not "Dept")
+- Review error messages to ensure they're helpful and actionable
+- Apply consistent capitalization and punctuation rules
+
+Implementation approach:
+```javascript
+// Create a centralized content dictionary
+const contentDictionary = {
+  statuses: {
+    active: 'Active',
+    idle: 'Paused',  // Changed from "Idle" to "Paused"
+    error: 'Error'
+  },
+  actions: {
+    add: 'Add Agent',
+    remove: 'Remove',
+    export: 'Export JSON',
+    import: 'Import JSON'
+  },
+  entities: {
+    department: 'Department',  // Never "Dept"
+    agent: 'Agent',
+    task: 'Task'
+  },
+  errors: {
+    connectionFailed: 'Connection failed. Please try again.',
+    invalidData: 'Invalid data format. Please check and retry.'
+  }
+};
+
+// Use this dictionary throughout the application
+function getContent(category, key) {
+  return contentDictionary[category]?.[key] || key;
+}
+```
+
+# Test Strategy:
+Review all UI text for compliance with the content guidelines. Test with users to ensure terminology is clear and understandable. Verify consistency across different parts of the application.

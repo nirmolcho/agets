@@ -1,0 +1,36 @@
+# Task ID: 3
+# Title: Redesign Agent Cards for Reduced Density
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Reduce text clutter on agent cards by showing only essential information at a glance and moving extended details to the side panel.
+# Details:
+Redesign agent cards to:
+- Display only role, status, and department tag at a glance
+- Create a clean, minimal design that reduces cognitive load
+- Implement a consistent card structure with proper spacing
+- Add hover states that highlight card edges
+- Ensure cards maintain readability at different zoom levels
+
+Component structure:
+```jsx
+const AgentCard = ({ agent }) => (
+  <div className="agent-card">
+    <div className="agent-card__header">
+      <span className="agent-role">{agent.role}</span>
+      <StatusIndicator status={agent.status} />
+    </div>
+    <div className="agent-card__body">
+      <DepartmentTag department={agent.department} />
+    </div>
+    <div className="agent-card__hover-actions">
+      <ActionButton type="start" />
+      <ActionButton type="stop" />
+      <ActionButton type="error" />
+    </div>
+  </div>
+);
+```
+
+# Test Strategy:
+Conduct usability testing to ensure users can quickly identify key information on cards. Verify that the design works across different screen sizes and densities. Test hover interactions to ensure they're intuitive and accessible.

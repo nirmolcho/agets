@@ -1,0 +1,39 @@
+# Task ID: 2
+# Title: Implement Visual Hierarchy for Organization Chart
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Enhance the visual hierarchy to make CEO → Departments → Managers → Agents instantly scannable.
+# Details:
+Modify the organization chart layout to:
+- Use consistent spacing between hierarchy levels
+- Apply proper indentation for subordinate elements
+- Differentiate line weights for solid vs. dashed connections
+- Implement subtle grid/guide backgrounds to help with orientation during navigation
+- Ensure proper alignment of elements at each hierarchy level
+
+CSS implementation should include:
+```css
+.org-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.hierarchy-level-1 { margin-left: 0; }
+.hierarchy-level-2 { margin-left: var(--spacing-lg); }
+/* Continue for additional levels */
+
+.connection-line-solid {
+  border-width: 2px;
+  border-style: solid;
+}
+
+.connection-line-dashed {
+  border-width: 1px;
+  border-style: dashed;
+}
+```
+
+# Test Strategy:
+Test the visual hierarchy with different organizational structures to ensure it scales appropriately. Conduct user testing to verify that the hierarchy is instantly scannable. Verify proper rendering across different screen sizes and zoom levels.

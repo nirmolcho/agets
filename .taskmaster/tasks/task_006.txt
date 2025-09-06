@@ -1,0 +1,49 @@
+# Task ID: 6
+# Title: Implement Microinteractions for Agent Cards
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Add hover interactions to highlight card edges and show quick actions (Start/Stop/Error) for improved user experience.
+# Details:
+Implement microinteractions that:
+- Highlight card edges on hover with a subtle glow or border change
+- Reveal quick action buttons on hover
+- Include subtle transitions (150-200ms) for smooth state changes
+- Provide visual feedback on button hover/active states
+
+CSS implementation:
+```css
+.agent-card {
+  transition: all 200ms ease-out;
+  border: 1px solid transparent;
+}
+
+.agent-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.agent-card__hover-actions {
+  opacity: 0;
+  transition: opacity 150ms ease-in;
+}
+
+.agent-card:hover .agent-card__hover-actions {
+  opacity: 1;
+}
+
+.action-button {
+  transition: transform 100ms ease;
+}
+
+.action-button:hover {
+  transform: scale(1.05);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+```
+
+# Test Strategy:
+Test hover interactions across different devices and input methods. Verify that transitions are smooth and not jarring. Ensure actions are accessible via keyboard for users who don't use mouse hover.

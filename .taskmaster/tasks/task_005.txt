@@ -1,0 +1,42 @@
+# Task ID: 5
+# Title: Implement Status Indicators with Color and Icons
+# Status: pending
+# Dependencies: 1, 3
+# Priority: high
+# Description: Create status indicators that use both color and icon (not color alone) for active/idle/error states, with subtle animations for real-time feel.
+# Details:
+Design and implement status indicators that:
+- Combine appropriate colors with distinct icons for each state
+- Include subtle animations (pulse for active, slow blink for error)
+- Ensure accessibility by not relying on color alone
+- Maintain consistency across all instances
+
+Component implementation:
+```jsx
+const StatusIndicator = ({ status }) => {
+  const getStatusDetails = () => {
+    switch(status) {
+      case 'active':
+        return { icon: 'check-circle', color: 'var(--color-success)', animation: 'pulse' };
+      case 'idle':
+        return { icon: 'pause-circle', color: 'var(--color-warning)', animation: 'none' };
+      case 'error':
+        return { icon: 'alert-circle', color: 'var(--color-error)', animation: 'blink' };
+      default:
+        return { icon: 'help-circle', color: 'var(--color-neutral)', animation: 'none' };
+    }
+  };
+  
+  const { icon, color, animation } = getStatusDetails();
+  
+  return (
+    <div className={`status-indicator ${animation}`} style={{ color }}>
+      <Icon name={icon} />
+      <span className="status-text">{status}</span>
+    </div>
+  );
+};
+```
+
+# Test Strategy:
+Test with screen readers to ensure status is properly announced. Verify animations don't trigger vestibular disorders. Test with color blindness simulators to ensure states are distinguishable without color.

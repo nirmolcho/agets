@@ -1,0 +1,147 @@
+# Task ID: 12
+# Title: Implement Zoom and Pan Navigation with Orientation Cues
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Add subtle grid/guide backgrounds to help with orientation during zoom and pan navigation.
+# Details:
+Implement zoom and pan navigation features:
+- Add a subtle grid background that scales appropriately with zoom level
+- Implement smooth zoom in/out functionality with mouse wheel and buttons
+- Create intuitive pan navigation when dragging the background
+- Add a mini-map or navigator in a corner for orientation in large charts
+- Include visual cues for the current zoom level and position
+
+Implementation approach:
+```javascript
+class ZoomPanManager {
+  constructor(container, content) {
+    this.container = container;
+    this.content = content;
+    this.scale = 1;
+    this.translateX = 0;
+    this.translateY = 0;
+    this.isDragging = false;
+    this.lastMouseX = 0;
+    this.lastMouseY = 0;
+    
+    this.setupEventListeners();
+    this.updateTransform();
+  }
+  
+  setupEventListeners() {
+    // Zoom with mouse wheel
+    this.container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      this.zoom(delta, e.clientX, e.clientY);
+    });
+    
+    // Pan with mouse drag
+    this.container.addEventListener('mousedown', (e) => {
+      if (e.target === this.container || e.target.classList.contains('background-grid')) {
+        this.startDrag(e.clientX, e.clientY);
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (this.isDragging) {
+        this.drag(e.clientX, e.clientY);
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      this.stopDrag();
+    });
+  }
+  
+  zoom(delta, mouseX, mouseY) {
+    // Calculate mouse position relative to content
+    const rect = this.container.getBoundingClientRect();
+    const offsetX = mouseX - rect.left;
+    const offsetY = mouseY - rect.top;
+    
+    // Calculate cursor position in content space
+    const contentX = (offsetX - this.translateX) / this.scale;
+    const contentY = (offsetY - this.translateY) / this.scale;
+    
+    // Apply zoom
+    const newScale = Math.max(0.5, Math.min(3, this.scale + delta));
+    
+    // Adjust translation to zoom toward cursor position
+    this.translateX = offsetX - contentX * newScale;
+    this.translateY = offsetY - contentY * newScale;
+    this.scale = newScale;
+    
+    this.updateTransform();
+  }
+  
+  startDrag(mouseX, mouseY) {
+    this.isDragging = true;
+    this.lastMouseX = mouseX;
+    this.lastMouseY = mouseY;
+    this.container.style.cursor = 'grabbing';
+  }
+  
+  drag(mouseX, mouseY) {
+    if (!this.isDragging) return;
+    
+    const dx = mouseX - this.lastMouseX;
+    const dy = mouseY - this.lastMouseY;
+    
+    this.translateX += dx;
+    this.translateY += dy;
+    
+    this.lastMouseX = mouseX;
+    this.lastMouseY = mouseY;
+    
+    this.updateTransform();
+  }
+  
+  stopDrag() {
+    this.isDragging = false;
+    this.container.style.cursor = 'default';
+  }
+  
+  updateTransform() {
+    this.content.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+    
+    // Update grid visibility based on zoom level
+    const gridElements = document.querySelectorAll('.grid-line');
+    gridElements.forEach(el => {
+      if (this.scale < 0.8) {
+        el.style.opacity = '0.3';
+      } else {
+        el.style.opacity = '0.1';
+      }
+    });
+  }
+}
+
+// Create background grid
+function createBackgroundGrid(container) {
+  const grid = document.createElement('div');
+  grid.className = 'background-grid';
+  
+  // Create horizontal lines
+  for (let i = 0; i < 50; i++) {
+    const line = document.createElement('div');
+    line.className = 'grid-line horizontal';
+    line.style.top = `${i * 50}px`;
+    grid.appendChild(line);
+  }
+  
+  // Create vertical lines
+  for (let i = 0; i < 50; i++) {
+    const line = document.createElement('div');
+    line.className = 'grid-line vertical';
+    line.style.left = `${i * 50}px`;
+    grid.appendChild(line);
+  }
+  
+  container.appendChild(grid);
+}
+```
+
+# Test Strategy:
+Test zoom and pan functionality across different devices and input methods. Verify that the grid provides proper orientation cues at various zoom levels. Test with large organizational charts to ensure navigation remains intuitive.

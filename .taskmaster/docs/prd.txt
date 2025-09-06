@@ -1,0 +1,73 @@
+UX/UI Improvement Guidelines for Agent Orchestration Studio
+1. Visual Hierarchy & Layout
+
+Clarify hierarchy: CEO → Departments → Managers → Agents should be instantly scannable. Use consistent spacing, indentation, and line weight for solid vs. dashed connections.
+
+Card density: Reduce text clutter on agent cards. Show role + status + department tag at a glance; move extended details into the side panel.
+
+Zoom & pan cues: Provide subtle grid/guide backgrounds to help orientation during navigation.
+
+2. Theming & Aesthetics
+
+Dark theme polish: Ensure consistent contrast ratios (WCAG 3.0 minimum 4.5:1 for text).
+
+Gradients: Restrict to department tags only, as planned—avoid gradients on buttons or icons for readability.
+
+Typography: Apply a clear hierarchy (e.g., department names in medium weight, agent roles in regular).
+
+3. Interaction & Feedback
+
+Status indicators: Use color + icon (not color alone) for active/idle/error. Add subtle animations (pulse, blink) for real-time feel.
+
+Microinteractions: On hover, highlight card edges and show quick actions (Start/Stop/Error).
+
+Reorganize action: Animate the transition so users keep spatial context.
+
+4. Task Panel (Right Side)
+
+Task prioritization: Use chips or color-coded tags for priority.
+
+Sorting: Let users toggle sort order (by due date, priority, status) with clear affordances.
+
+Compact layout: Collapse long task lists; expand on click.
+
+5. Department Overlay
+
+Consistency: Match card styling with main view but simplify (tile grid).
+
+Focus mode: When opening a department, dim the background org view to reduce distraction.
+
+6. Content & UX Writing
+
+Apply content heuristics:
+
+Use plain language for statuses, actions, and errors (e.g., “Paused” instead of “Idle”).
+
+Keep button labels concise (“Add Agent”, “Export JSON”).
+
+Ensure consistency across panels and overlays (avoid mixing synonyms like “Dept” and “Department”).
+
+7. Accessibility
+
+Keyboard navigation: Ensure tab order through cards, overlays, and panels.
+
+Screen reader support: Each card should announce agent name, role, department, and status.
+
+Color + icon for status (don’t rely on color alone).
+
+8. System Design Approach
+
+Treat every card, overlay, and panel as part of a design system.
+
+Define tokens for:
+
+Colors (status states, background, overlays)
+
+Typography (titles, body, tags)
+
+Spacing (card padding, line height, grid)
+
+Icons (status, department)
+
+✅ Summary for your agents:
+“Make the org chart easier to scan, agent cards lighter, status more intuitive, overlays consistent, and tasks panel more functional. Apply a cohesive design system (colors, spacing, typography), follow accessibility best practices, and keep all copy clear and consistent.”
