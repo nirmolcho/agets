@@ -31,6 +31,7 @@ test.describe('Interactive Elements - Dynamic Scan', () => {
       await page.evaluate(() => {
         const w = window as any;
         if (typeof w.__forceRenderDemo === 'function') w.__forceRenderDemo();
+        if (typeof w.__forceDeptView === 'function') w.__forceDeptView();
       });
       await expect(page.locator('.dept-card').first()).toBeVisible({ timeout: 2000 });
     }
