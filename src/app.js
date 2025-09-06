@@ -55,28 +55,29 @@ try {
   window.__forceDeptView = () => { state.mode = 'departments'; render(); };
 } catch {}
 
-// Ensure welcome overlay is visible immediately on first load before any async work
+// Onboarding overlay policy: hidden by default; allow opt-in via URL param
 try {
-  const hasSetup = (() => {
-    try { return !!localStorage.getItem('aos_setup_v1'); } catch { return false; }
-  })();
-  const hasAutostart = (() => {
+  const params = new URLSearchParams(location.search);
+  const show = (() => {
     try {
-      const params = new URLSearchParams(location.search);
-      const v = params.get('autostart');
-      return v === '1' || v === 'true';
+      const p = params.get('showOnboarding');
+      return p === '1' || p === 'true';
     } catch { return false; }
   })();
-  if (!hasSetup && !hasAutostart) {
-    const overlay = document.getElementById('welcome-overlay');
-    if (overlay) {
-      overlay.className = 'welcome-overlay';
-      overlay.setAttribute('aria-hidden', 'false');
-    }
-    const container = document.getElementById('canvas-container');
-    const stage = document.getElementById('stage');
-    if (container) container.classList.add('hidden-in-onboarding');
-    if (stage) stage.classList.add('hidden-in-onboarding');
+  const overlay = document.getElementById('welcome-overlay');
+  const container = document.getElementById('canvas-container');
+  const stage = document.getElementById('stage');
+  if (overlay && !show) {
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    container?.classList.remove('hidden-in-onboarding');
+    stage?.classList.remove('hidden-in-onboarding');
+  }
+  if (overlay && show) {
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    container?.classList.add('hidden-in-onboarding');
+    stage?.classList.add('hidden-in-onboarding');
   }
 } catch {}
 
