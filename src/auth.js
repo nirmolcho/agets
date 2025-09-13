@@ -68,8 +68,8 @@ export function isAuthRequired() {
   const e2e = String(import.meta.env.VITE_E2E ?? '').toLowerCase();
   if (e2e === 'true' || e2e === '1') return false;
   const raw = String(import.meta.env.VITE_REQUIRE_AUTH ?? '').toLowerCase();
-  // Default to requiring auth when not explicitly disabled
-  if (!raw) return true;
+  // Default to NOT requiring auth for demo/showcase purposes
+  if (!raw) return false;
   return raw === 'true' || raw === '1' || raw === 'yes';
 }
 
@@ -90,6 +90,14 @@ export async function signInWithGoogle() {
   if (!sb) throw new Error('Supabase not configured');
   // Use production URL for OAuth redirect
   const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || 'https://agets.vercel.app/login.html';
+  
+  // Debug logging to help troubleshoot redirect issues
+  console.log('[OAuth Debug] Environment:', {
+    isDev: import.meta.env.DEV,
+    redirectTo,
+    origin: typeof window !== 'undefined' ? window.location.origin : 'unknown'
+  });
+  
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { 
