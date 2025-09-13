@@ -116,7 +116,7 @@ This project can use Supabase for Google OAuth and Email/Password auth.
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_REQUIRE_AUTH=true
-VITE_GOOGLE_REDIRECT_TO=http://localhost:3000/login.html
+VITE_GOOGLE_REDIRECT_TO=https://agets.vercel.app/login.html
 ```
 
 4) Visit `/login.html` to sign in. With `VITE_REQUIRE_AUTH=true`, the main app `/` redirects to login if unauthenticated. Use the toolbar Logout button to end the session.

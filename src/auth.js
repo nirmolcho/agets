@@ -88,7 +88,8 @@ export async function signOut() {
 export async function signInWithGoogle() {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase not configured');
-  const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || `${location.origin}/login.html`;
+  // Use production URL for OAuth redirect
+  const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || 'https://agets.vercel.app/login.html';
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo, queryParams: { prompt: 'select_account' } },
