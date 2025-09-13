@@ -100,31 +100,34 @@ function getFallbackOrg() {
 }
 
 async function init() {
+  // Always ensure overlay is hidden initially
+  try {
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  } catch {}
 
   // Pre-compute onboarding state and reveal overlay if not configured yet
   const persisted = loadSetupSelections();
-  if (persisted) {
-    // Persisted setup exists: show the canvas, we'll render after org data loads
-    try {
-      const overlay = document.getElementById('welcome-overlay');
-      const container = document.getElementById('canvas-container');
-      const stage = document.getElementById('stage');
-      if (overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
-      if (container) container.classList.remove('hidden-in-onboarding');
-      if (stage) stage.classList.remove('hidden-in-onboarding');
-      // Don't render yet - wait for actual org data to load
-    } catch {}
-  } else {
-    // Hide canvas until setup is completed
-    try {
-      const overlay = document.getElementById('welcome-overlay');
-      const container = document.getElementById('canvas-container');
-      const stage = document.getElementById('stage');
-      if (overlay) { overlay.classList.remove('hidden'); overlay.setAttribute('aria-hidden', 'false'); }
-      if (container) container.classList.add('hidden-in-onboarding');
-      if (stage) stage.classList.add('hidden-in-onboarding');
-    } catch {}
+  if (!persisted) {
+    // For first time users, create a default setup to avoid blocking
+    const defaultSetup = { 
+      departments: ['engineering', 'marketing', 'design', 'product', 'operations'], 
+      scope: 'all', 
+      layout: 'org' 
+    };
+    saveSetupSelections(defaultSetup);
   }
+  
+  // Always show canvas (setup exists or was just created)
+  try {
+    const container = document.getElementById('canvas-container');
+    const stage = document.getElementById('stage');
+    if (container) container.classList.remove('hidden-in-onboarding');
+    if (stage) stage.classList.remove('hidden-in-onboarding');
+  } catch {}
   await loadTheme();
 
   // Auth gate: if required and not logged in, redirect to login
@@ -158,17 +161,14 @@ async function init() {
   // Reveal the app only after auth/theme checks complete
   try { document.getElementById('app-root').style.visibility = 'visible'; } catch {}
 
-  // Apply welcome setup using previously computed persisted selections (if any)
-  if (persisted) {
-    try {
-      const overlay = document.getElementById('welcome-overlay');
-      const container = document.getElementById('canvas-container');
-      const stage = document.getElementById('stage');
-      if (overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
-      if (container) container.classList.remove('hidden-in-onboarding');
-      if (stage) stage.classList.remove('hidden-in-onboarding');
-    } catch {}
-  }
+  // Ensure overlay stays hidden
+  try {
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  } catch {}
 
   let org = null;
   try {
@@ -182,18 +182,16 @@ async function init() {
   }
   ORG_DATA = org;
 
-  if (persisted) {
-    buildGraphFromOrganization(org, persisted);
+  // Always load with persisted setup (either existing or default)
+  const setupToUse = persisted || loadSetupSelections();
+  if (setupToUse) {
+    buildGraphFromOrganization(org, setupToUse);
     computeResponsiveLayoutParams();
     autoLayout();
     loadSessionPositions();
     applySavedPositions();
     render();
     zoomToFit();
-  } else {
-    // Show onboarding overlay with dynamic generation controls
-    showWelcomeOverlay(org);
-    // Don't render anything yet - wait for user to complete setup
   }
   
   // If setup was completed before org finished loading, apply it now
@@ -797,6 +795,7 @@ function createAgentCard(node, design) {
   const statusDot = document.createElement('span');
   statusDot.className = `status-dot status-${node.status}`;
   statusDot.title = node.status;
+  statusDot.setAttribute('aria-label', `Status: ${node.status}`);
 
   header.appendChild(titleWrap);
   header.appendChild(statusDot);
@@ -1146,6 +1145,8 @@ function updateStatusDots(changedIds) {
       dot.classList.remove('status-active', 'status-idle', 'status-error');
       dot.classList.add(`status-${node.status}`);
       dot.title = node.status;
+      dot.setAttribute('title', node.status); // Ensure title is set
+      dot.setAttribute('aria-label', `Status: ${node.status}`); // Add aria-label for accessibility
     });
   } catch {}
 }
@@ -1843,6 +1844,8 @@ function renderDepartmentOverlayContent(container, deptKey) {
     title.textContent = a.name;
     const dot = document.createElement('span');
     dot.className = `status-dot status-${a.status}`;
+    dot.title = a.status;
+    dot.setAttribute('aria-label', `Status: ${a.status}`);
     miniHeader.append(title, dot);
     const meta = document.createElement('div');
     meta.className = 'mini-meta';

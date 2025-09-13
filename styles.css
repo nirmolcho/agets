@@ -84,10 +84,15 @@ body {
 .btn:hover { background: #2a2a2a; color: #fff; }
 .btn-primary {
   border: none;
-  background: #3f45c8; /* flat, no gradients per DO_NOT_APPLY_TO */
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); /* gradient from design.json */
   color: #fff;
+  font-size: 14px;
+  font-weight: 600;
 }
-.btn-primary:hover { transform: scale(1.05); background: #4a53d8; }
+.btn-primary:hover { 
+  transform: scale(1.05); 
+  background: linear-gradient(135deg, #5B5FE8 0%, #8048F0 100%); /* hover gradient from design.json */
+}
 
 /* Login page tweaks reuse existing tokens */
 .login-container { min-height: 100vh; display: grid; place-items: center; background: var(--container-bg); color: var(--text-color); }

@@ -84,10 +84,15 @@ body {
 .btn:hover { background: #2a2a2a; color: #fff; }
 .btn-primary {
   border: none;
-  background: #3f45c8; /* flat, no gradients per DO_NOT_APPLY_TO */
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); /* gradient from design.json */
   color: #fff;
+  font-size: 14px;
+  font-weight: 600;
 }
-.btn-primary:hover { transform: scale(1.05); background: #4a53d8; }
+.btn-primary:hover { 
+  transform: scale(1.05); 
+  background: linear-gradient(135deg, #5B5FE8 0%, #8048F0 100%); /* hover gradient from design.json */
+}
 
 /* Login page tweaks reuse existing tokens */
 .login-container { min-height: 100vh; display: grid; place-items: center; background: var(--container-bg); color: var(--text-color); }
@@ -487,4 +492,32 @@ body {
   z-index: 50;
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
+
+/* Generic action modal (for forms like Add Agent/Department) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  width: min(520px, 94vw);
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.modal h3 { margin: 0 0 6px; }
+.modal .form { display: grid; gap: 10px; }
+.modal .row { display: grid; gap: 6px; }
+.modal input, .modal select { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px; }
+.modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
 
