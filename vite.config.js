@@ -6,6 +6,15 @@ export default defineConfig({
     strictPort: true,
     open: false,
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        login: 'login.html',
+        app: 'app.html'
+      }
+    }
+  }
 });
 
 
