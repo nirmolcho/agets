@@ -3,10 +3,19 @@ import { getSession, isAuthRequired, signOut, onAuthStateChange } from './auth.j
 import { saveUserData, logUserActivity } from './telemetry.js';
 
 // Responsive layout parameters (tunable at runtime)
-let CARD_WIDTH = 300;
-let CARD_HEIGHT = 160;
-let GAP_X = 60;
-let GAP_Y = 140;
+let CARD_WIDTH = 280;
+let CARD_HEIGHT = 180;
+let GAP_X = 80;
+let GAP_Y = 120;
+
+// Layout configuration
+const LAYOUT_CONFIG = {
+  COMPACT_THRESHOLD: 15, // Switch to compact layout if more than 15 nodes
+  VERTICAL_LAYOUT_THRESHOLD: 8, // Switch to vertical layout if more than 8 nodes per level
+  MIN_CARD_SPACING: 40,
+  LEVEL_HEIGHT_MULTIPLIER: 1.2,
+  BRANCH_COLLAPSE_ENABLED: true
+};
 
 const STATUS_VALUES = ['active', 'idle', 'error'];
 let ORG_DATA = null;
@@ -29,6 +38,9 @@ const state = {
   expandedAgentId: null, // only one expanded agent card at a time
   overlayDeptKey: null, // department overlay open key
   overlaySelectedAgentId: null, // selected agent inside overlay
+  collapsedNodes: new Set(), // IDs of collapsed parent nodes
+  layoutMode: 'auto', // 'auto', 'horizontal', 'vertical', 'radial'
+  compactMode: false, // Whether to use compact card layout
 };
 
 // Expose test helpers early so tests can call them immediately after page load
@@ -609,41 +621,203 @@ function autoLayout() {
     });
   }
 
-  // First pass: compute subtree widths
+  // Determine optimal layout mode
+  const totalNodes = state.nodes.size;
+  const maxNodesPerLevel = Math.max(...Array.from(childrenMap.values()).map(arr => arr.length));
+  
+  if (state.layoutMode === 'auto') {
+    if (totalNodes > LAYOUT_CONFIG.COMPACT_THRESHOLD) {
+      state.compactMode = true;
+    }
+    
+    if (maxNodesPerLevel > LAYOUT_CONFIG.VERTICAL_LAYOUT_THRESHOLD) {
+      state.layoutMode = 'vertical';
+    } else {
+      state.layoutMode = 'horizontal';
+    }
+  }
+
+  // Apply the selected layout algorithm
+  switch (state.layoutMode) {
+    case 'vertical':
+      applyVerticalLayout(rootId, childrenMap);
+      break;
+    case 'radial':
+      applyRadialLayout(rootId, childrenMap);
+      break;
+    case 'horizontal':
+    default:
+      applyHorizontalLayout(rootId, childrenMap);
+      break;
+  }
+}
+
+function applyHorizontalLayout(rootId, childrenMap) {
+  // Improved horizontal layout with better space utilization
   const widths = new Map();
+  const maxWidth = window.innerWidth - 200; // Leave margin for UI
+  
   function computeWidth(id) {
-    const children = childrenMap.get(id) || [];
+    const children = (childrenMap.get(id) || []).filter(childId => !state.collapsedNodes.has(id));
     if (children.length === 0) {
       widths.set(id, CARD_WIDTH);
       return CARD_WIDTH;
     }
+    
     let sum = 0;
     for (const c of children) sum += computeWidth(c);
-    const total = sum + GAP_X * (children.length - 1);
-    const w = Math.max(CARD_WIDTH, total);
+    const minGap = Math.max(GAP_X * 0.5, LAYOUT_CONFIG.MIN_CARD_SPACING);
+    const total = sum + minGap * (children.length - 1);
+    const w = Math.max(CARD_WIDTH, Math.min(total, maxWidth));
     widths.set(id, w);
     return w;
   }
   computeWidth(rootId);
 
-  // Second pass: assign positions top-down, left-to-right
-  const leftMargin = 40;
-  const topMargin = 40;
+  // Position nodes with improved spacing
+  const leftMargin = 60;
+  const topMargin = 60;
+  
   function place(id, x, depth) {
     const w = widths.get(id) || CARD_WIDTH;
     const node = state.nodes.get(id);
     if (!node) return;
+    
     node.x = x + w / 2 - CARD_WIDTH / 2;
-    node.y = topMargin + depth * (CARD_HEIGHT + GAP_Y);
+    node.y = topMargin + depth * (CARD_HEIGHT + GAP_Y) * LAYOUT_CONFIG.LEVEL_HEIGHT_MULTIPLIER;
+    
+    const children = (childrenMap.get(id) || []).filter(childId => !state.collapsedNodes.has(id));
+    if (children.length === 0) return;
+    
+    // Calculate spacing based on available width
+    const totalChildWidth = children.reduce((sum, c) => sum + (widths.get(c) || CARD_WIDTH), 0);
+    const availableWidth = w;
+    const spacing = children.length > 1 ? 
+      Math.max(LAYOUT_CONFIG.MIN_CARD_SPACING, (availableWidth - totalChildWidth) / (children.length - 1)) : 0;
+    
     let childX = x;
-    const children = childrenMap.get(id) || [];
     for (const c of children) {
       const cw = widths.get(c) || CARD_WIDTH;
       place(c, childX, depth + 1);
-      childX += cw + GAP_X;
+      childX += cw + spacing;
     }
   }
   place(rootId, leftMargin, 0);
+}
+
+function applyVerticalLayout(rootId, childrenMap) {
+  // Vertical layout for wide organizations
+  const nodesByLevel = new Map();
+  const visited = new Set();
+  
+  // Group nodes by level
+  function groupByLevel(id, level = 0) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    
+    if (!nodesByLevel.has(level)) nodesByLevel.set(level, []);
+    nodesByLevel.get(level).push(id);
+    
+    const children = (childrenMap.get(id) || []).filter(childId => !state.collapsedNodes.has(id));
+    children.forEach(childId => groupByLevel(childId, level + 1));
+  }
+  groupByLevel(rootId);
+  
+  // Position nodes level by level
+  const leftMargin = 100;
+  const topMargin = 60;
+  const levelWidth = CARD_WIDTH + GAP_X * 2;
+  
+  for (const [level, nodeIds] of nodesByLevel) {
+    const x = leftMargin + level * levelWidth;
+    const totalHeight = nodeIds.length * (CARD_HEIGHT + GAP_Y);
+    const startY = topMargin + Math.max(0, (window.innerHeight - totalHeight) / 3);
+    
+    nodeIds.forEach((nodeId, index) => {
+      const node = state.nodes.get(nodeId);
+      if (node) {
+        node.x = x;
+        node.y = startY + index * (CARD_HEIGHT + GAP_Y);
+      }
+    });
+  }
+}
+
+function applyRadialLayout(rootId, childrenMap) {
+  // Radial layout for better space utilization
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  const baseRadius = 200;
+  
+  const visited = new Set();
+  const positions = new Map();
+  
+  function placeRadial(id, level = 0, angle = 0, parentAngle = 0, angleSpan = 2 * Math.PI) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    
+    const node = state.nodes.get(id);
+    if (!node) return;
+    
+    const radius = level * baseRadius;
+    let x, y;
+    
+    if (level === 0) {
+      // Center the root node
+      x = centerX - CARD_WIDTH / 2;
+      y = centerY - CARD_HEIGHT / 2;
+    } else {
+      x = centerX + radius * Math.cos(angle) - CARD_WIDTH / 2;
+      y = centerY + radius * Math.sin(angle) - CARD_HEIGHT / 2;
+    }
+    
+    node.x = x;
+    node.y = y;
+    positions.set(id, { x: node.x, y: node.y, angle, level });
+    
+    const children = (childrenMap.get(id) || []).filter(childId => !state.collapsedNodes.has(id));
+    if (children.length === 0) return;
+    
+    const childAngleSpan = angleSpan * 0.8; // Reduce span for children
+    const angleStep = childAngleSpan / Math.max(1, children.length - 1);
+    const startAngle = angle - childAngleSpan / 2;
+    
+    children.forEach((childId, index) => {
+      const childAngle = children.length === 1 ? angle : startAngle + index * angleStep;
+      placeRadial(childId, level + 1, childAngle, angle, angleStep);
+    });
+  }
+  
+  placeRadial(rootId);
+}
+
+function toggleNodeCollapse(nodeId) {
+  if (state.collapsedNodes.has(nodeId)) {
+    state.collapsedNodes.delete(nodeId);
+  } else {
+    state.collapsedNodes.add(nodeId);
+  }
+  
+  // Recalculate layout and render
+  autoLayout();
+  render();
+  zoomToFit();
+}
+
+function switchLayoutMode(mode) {
+  state.layoutMode = mode;
+  if (mode !== 'auto') {
+    state.compactMode = mode === 'vertical' || mode === 'radial';
+  }
+  
+  autoLayout();
+  render();
+  zoomToFit();
+}
+
+function toggleCompactMode() {
+  state.compactMode = !state.compactMode;
+  render();
 }
 
 function resizeCanvasToContent() {
@@ -772,12 +946,13 @@ function curvedPath(start, end) {
 
 function createAgentCard(node, design) {
   const el = document.createElement('div');
-  el.className = 'agent-card';
+  el.className = `agent-card ${state.compactMode ? 'compact' : ''}`;
   el.style.left = `${node.x}px`;
   el.style.top = `${node.y}px`;
   el.style.width = `${CARD_WIDTH}px`;
-  el.style.minHeight = `${CARD_HEIGHT}px`;
+  el.style.minHeight = `${state.compactMode ? CARD_HEIGHT * 0.8 : CARD_HEIGHT}px`;
   el.dataset.id = node.id;
+  el.dataset.level = node.level;
 
   const header = document.createElement('div');
   header.className = 'agent-header';
@@ -797,7 +972,23 @@ function createAgentCard(node, design) {
   statusDot.title = node.status;
   statusDot.setAttribute('aria-label', `Status: ${node.status}`);
 
+  // Add collapse/expand button for nodes with children
+  const hasChildren = state.edges.some(e => e.toId === node.id);
+  let collapseBtn = null;
+  if (hasChildren && LAYOUT_CONFIG.BRANCH_COLLAPSE_ENABLED) {
+    collapseBtn = document.createElement('button');
+    collapseBtn.className = 'collapse-btn';
+    collapseBtn.innerHTML = state.collapsedNodes.has(node.id) ? '⊞' : '⊟';
+    collapseBtn.title = state.collapsedNodes.has(node.id) ? 'Expand branch' : 'Collapse branch';
+    collapseBtn.setAttribute('aria-label', state.collapsedNodes.has(node.id) ? 'Expand branch' : 'Collapse branch');
+    collapseBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleNodeCollapse(node.id);
+    };
+  }
+
   header.appendChild(titleWrap);
+  if (collapseBtn) header.appendChild(collapseBtn);
   header.appendChild(statusDot);
   header.classList.add('tab-header');
   header.onclick = (e) => {
@@ -979,6 +1170,72 @@ function wireToolbar() {
 
   btnExport.onclick = exportConfiguration;
   btnAdd.onclick = openAddAgentModal;
+  
+  // Add layout controls to the toolbar dynamically
+  addLayoutControls();
+
+function addLayoutControls() {
+  const toolbar = document.getElementById('toolbar');
+  const toolbarLeft = toolbar.querySelector('.toolbar-left');
+  
+  // Create layout controls container
+  const layoutControls = document.createElement('div');
+  layoutControls.className = 'layout-controls';
+  layoutControls.style.display = 'flex';
+  layoutControls.style.gap = '8px';
+  layoutControls.style.marginLeft = '16px';
+  
+  // Layout mode selector
+  const layoutSelect = document.createElement('select');
+  layoutSelect.className = 'layout-select';
+  layoutSelect.innerHTML = `
+    <option value="auto">Auto Layout</option>
+    <option value="horizontal">Horizontal</option>
+    <option value="vertical">Vertical</option>
+    <option value="radial">Radial</option>
+  `;
+  layoutSelect.value = state.layoutMode;
+  layoutSelect.onchange = () => switchLayoutMode(layoutSelect.value);
+  
+  // Compact mode toggle
+  const compactBtn = document.createElement('button');
+  compactBtn.className = `btn btn-secondary ${state.compactMode ? 'active' : ''}`;
+  compactBtn.textContent = 'Compact';
+  compactBtn.title = 'Toggle compact card layout';
+  compactBtn.onclick = () => {
+    toggleCompactMode();
+    compactBtn.classList.toggle('active', state.compactMode);
+  };
+  
+  // Expand/Collapse all button
+  const expandAllBtn = document.createElement('button');
+  expandAllBtn.className = 'btn btn-secondary';
+  expandAllBtn.textContent = state.collapsedNodes.size > 0 ? 'Expand All' : 'Collapse All';
+  expandAllBtn.title = 'Expand or collapse all branches';
+  expandAllBtn.onclick = () => {
+    if (state.collapsedNodes.size > 0) {
+      state.collapsedNodes.clear();
+      expandAllBtn.textContent = 'Collapse All';
+    } else {
+      // Collapse all nodes that have children
+      for (const [nodeId] of state.nodes) {
+        const hasChildren = state.edges.some(e => e.toId === nodeId);
+        if (hasChildren && nodeId !== 'chief-executive-officer') {
+          state.collapsedNodes.add(nodeId);
+        }
+      }
+      expandAllBtn.textContent = 'Expand All';
+    }
+    autoLayout();
+    render();
+    zoomToFit();
+  };
+  
+  layoutControls.appendChild(layoutSelect);
+  layoutControls.appendChild(compactBtn);
+  layoutControls.appendChild(expandAllBtn);
+  toolbarLeft.appendChild(layoutControls);
+}
   if (btnDeptView) btnDeptView.onclick = () => {
     state.mode = 'departments';
     state.activeDepartment = null;
@@ -2106,11 +2363,38 @@ function computeResponsiveLayoutParams() {
   const maxBreadth = Math.max(1, ...(Array.from(levels.values()).map(arr => arr.length)));
   const depth = Math.max(1, ...(Array.from(levels.keys())) ) + 1; // levels start at 0
 
-  // Base sizes
-  const baseCardW = 360;
-  const baseCardH = 220;
-  const baseGapX = 80;
-  const baseGapY = 180;
+  // Responsive base sizes based on screen size and device type
+  const isMobile = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
+  
+  let baseCardW, baseCardH, baseGapX, baseGapY;
+  
+  if (isMobile) {
+    baseCardW = 240;
+    baseCardH = 160;
+    baseGapX = 40;
+    baseGapY = 100;
+    state.compactMode = true; // Force compact mode on mobile
+  } else if (isTablet) {
+    baseCardW = 280;
+    baseCardH = 180;
+    baseGapX = 60;
+    baseGapY = 120;
+  } else {
+    baseCardW = state.compactMode ? 260 : 320;
+    baseCardH = state.compactMode ? 160 : 200;
+    baseGapX = state.compactMode ? 50 : 80;
+    baseGapY = state.compactMode ? 100 : 140;
+  }
+
+  // Adjust for layout mode
+  if (state.layoutMode === 'vertical') {
+    baseGapX = Math.min(baseGapX, width / 8); // Ensure we don't exceed screen width
+  } else if (state.layoutMode === 'radial') {
+    baseCardW *= 0.9; // Slightly smaller cards for radial layout
+    baseCardH *= 0.9;
+  }
 
   // Approx required size using base values
   const approxWidth = maxBreadth * baseCardW + (maxBreadth - 1) * baseGapX + 240;
@@ -2118,13 +2402,14 @@ function computeResponsiveLayoutParams() {
 
   const fitScaleX = width / approxWidth;
   const fitScaleY = height / approxHeight;
-  // Mildly adapt intrinsic sizes; also stage zoom will handle remaining scaling
-  const s = clamp(Math.min(fitScaleX, fitScaleY), 0.7, 1.15);
+  
+  // More aggressive scaling for better fit
+  const s = clamp(Math.min(fitScaleX, fitScaleY), 0.5, 1.2);
 
-  CARD_WIDTH = clamp(Math.round(baseCardW * s), 240, 420);
-  CARD_HEIGHT = clamp(Math.round(baseCardH * s), 160, 280);
-  GAP_X = clamp(Math.round(baseGapX * s), 48, 120);
-  GAP_Y = clamp(Math.round(baseGapY * s), 100, 220);
+  CARD_WIDTH = clamp(Math.round(baseCardW * s), isMobile ? 200 : 240, isDesktop ? 420 : 320);
+  CARD_HEIGHT = clamp(Math.round(baseCardH * s), isMobile ? 120 : 160, isDesktop ? 280 : 220);
+  GAP_X = clamp(Math.round(baseGapX * s), 30, isDesktop ? 120 : 80);
+  GAP_Y = clamp(Math.round(baseGapY * s), 60, isDesktop ? 220 : 160);
 }
 
 init();

@@ -94,6 +94,41 @@ body {
   background: linear-gradient(135deg, #5B5FE8 0%, #8048F0 100%); /* hover gradient from design.json */
 }
 
+.btn.active {
+  background: #4a5568;
+  border-color: #6b7280;
+  color: #fff;
+}
+
+/* Layout Controls */
+.layout-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.layout-select {
+  background: #111;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 120px;
+}
+
+.layout-select:hover {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #fff;
+}
+
+.layout-select:focus {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}
+
 /* Login page tweaks reuse existing tokens */
 .login-container { min-height: 100vh; display: grid; place-items: center; background: var(--container-bg); color: var(--text-color); }
 .login-card { width: min(420px, 92vw); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); padding: 20px; display: grid; gap: 14px; }
@@ -166,12 +201,72 @@ body {
   user-select: none;
   transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
+
+.agent-card.compact {
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.agent-card.compact .agent-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.agent-card.compact .agent-role {
+  font-size: 11px;
+}
+
+.agent-card.compact .dept-tag {
+  padding: 4px 8px;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.agent-card.compact .metrics {
+  font-size: 11px;
+  margin-top: 8px;
+}
 .agent-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   border-color: #444444;
 }
-.agent-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.agent-header { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  margin-bottom: 8px; 
+  gap: 8px;
+}
+
+.collapse-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  flex-shrink: 0;
+}
+
+.collapse-btn:hover {
+  background: #333;
+  border-color: #666;
+  color: #fff;
+}
+
+.collapse-btn:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}
 .agent-title { font-weight: 700; font-size: var(--font-size-title, 18px); }
 .agent-role { opacity: 0.85; font-size: var(--font-size-role, 13px); }
 .dept-tag { display: inline-block; padding: 8px 14px; border-radius: 8px; font-size: var(--font-size-tag, 12px); font-weight: 700; margin-bottom: 10px; }
@@ -180,7 +275,22 @@ body {
 .control-btn { border: 1px solid #444; background: transparent; color: #ccc; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 .control-btn:hover { background: #2a2a2a; color: #fff; }
 
-.connection-path { stroke: var(--line-stroke); stroke-width: 3; fill: none; opacity: 0.7; pointer-events: auto; vector-effect: non-scaling-stroke; }
+.connection-path { 
+  stroke: var(--line-stroke); 
+  stroke-width: 2.5; 
+  fill: none; 
+  opacity: 0.8; 
+  pointer-events: auto; 
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 200ms ease, stroke-width 200ms ease;
+}
+
+.connection-path:hover {
+  opacity: 1;
+  stroke-width: 3;
+}
 
 /* Testing connection styles */
 .connection-path.testing {
@@ -385,8 +495,79 @@ body {
 .overlay-agent-details .details-sub { font-size: 12px; opacity: 0.85; }
 .overlay-agent-details .task-list { margin-top: 10px; }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .toolbar .toolbar-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .layout-controls {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .layout-select {
+    min-width: auto;
+    flex: 1;
+  }
+  
+  .agent-card {
+    font-size: 14px;
+  }
+  
+  .agent-card.compact {
+    padding: 8px 12px;
+  }
+  
+  .agent-title {
+    font-size: 14px !important;
+  }
+  
+  .agent-role {
+    font-size: 10px !important;
+  }
+  
+  .dept-tag {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+  
+  .collapse-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+  
+  .detail-panel,
+  .overlay-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .zoom-controls {
+    bottom: 80px; /* Move up to avoid mobile browser UI */
+    right: 8px;
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 720px) {
-  .overlay-content { width: 100%; }
+  .dept-controls { 
+    grid-template-columns: 1fr; 
+  }
+  .dept-controls .control-divider { 
+    display: none; 
+  }
 }
 
 .dept-controls {
