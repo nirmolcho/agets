@@ -92,7 +92,14 @@ export async function signInWithGoogle() {
   const redirectTo = import.meta.env.VITE_GOOGLE_REDIRECT_TO || 'https://agets.vercel.app/login.html';
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo, queryParams: { prompt: 'select_account' } },
+    options: { 
+      redirectTo, 
+      queryParams: { 
+        prompt: 'select_account',
+        access_type: 'offline',
+        // Enable refresh token for better session management
+      } 
+    },
   });
   return { data, error };
 }
