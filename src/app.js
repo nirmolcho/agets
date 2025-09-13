@@ -1940,9 +1940,9 @@ function createDepartmentCard(dept, x, y, design) {
   }
   summary.innerHTML = `
     <div><strong>${total}</strong> agents</div>
-    <div class="meta-pill"><span class="status-dot status-active"></span>${statusCounts.active} active</div>
-    <div class="meta-pill"><span class="status-dot status-idle"></span>${statusCounts.idle} idle</div>
-    <div class="meta-pill"><span class="status-dot status-error"></span>${statusCounts.error} error</div>
+    <div class="meta-pill"><span class="status-dot status-active" title="Active agents" aria-label="Active agents"></span>${statusCounts.active} active</div>
+    <div class="meta-pill"><span class="status-dot status-idle" title="Idle agents" aria-label="Idle agents"></span>${statusCounts.idle} idle</div>
+    <div class="meta-pill"><span class="status-dot status-error" title="Error agents" aria-label="Error agents"></span>${statusCounts.error} error</div>
   `;
 
   // Controls: grouped for hierarchy and separation
